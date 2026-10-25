@@ -8,6 +8,7 @@
 #if defined(__LINUX__)
 #include <SDL2/SDL.h>
 SDL_Window* CMSWindow::ms_pSDLWindow = NULL;
+SDL_Renderer* CMSWindow::ms_pSDLRenderer = NULL;
 #endif
 
 CMSWindow::TWindowClassSet CMSWindow::ms_stWCSet;
@@ -57,6 +58,11 @@ void CMSWindow::OnSize(WPARAM wParam, LPARAM /*lParam*/)
 void CMSWindow::Destroy()
 {
 #if defined(__LINUX__)
+	if (ms_pSDLRenderer)
+	{
+		SDL_DestroyRenderer(ms_pSDLRenderer);
+		ms_pSDLRenderer = NULL;
+	}
 	if (ms_pSDLWindow)
 	{
 		SDL_DestroyWindow(ms_pSDLWindow);
@@ -103,6 +109,25 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 	{
 		TraceError("CMSWindow::Create: SDL_CreateWindow failed: %s", SDL_GetError());
 		return false;
+	}
+
+	ms_pSDLRenderer = SDL_CreateRenderer(ms_pSDLWindow, -1, SDL_RENDERER_ACCELERATED);
+	if (!ms_pSDLRenderer)
+	{
+		Tracef("[SDL2] Accelerated renderer failed (%s). Falling back to software.\n", SDL_GetError());
+		ms_pSDLRenderer = SDL_CreateRenderer(ms_pSDLWindow, -1, SDL_RENDERER_SOFTWARE);
+	}
+
+	if (ms_pSDLRenderer)
+	{
+		SDL_RendererInfo rInfo;
+		SDL_GetRendererInfo(ms_pSDLRenderer, &rInfo);
+		Tracef("[SDL2] Renderer active: '%s' (flags: 0x%X)\n", rInfo.name, rInfo.flags);
+
+		// Commit initial frame buffer so Wayland compositor immediately maps the surface
+		SDL_SetRenderDrawColor(ms_pSDLRenderer, 24, 28, 36, 255);
+		SDL_RenderClear(ms_pSDLRenderer);
+		SDL_RenderPresent(ms_pSDLRenderer);
 	}
 
 	m_hWnd = (HWND)ms_pSDLWindow;

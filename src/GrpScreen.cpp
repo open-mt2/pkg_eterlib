@@ -630,7 +630,12 @@ void CScreen::Clear()
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, ms_clearColor, ms_clearDepth, ms_clearStencil);
 #if defined(__LINUX__)
-	if (CMSWindow::ms_pSDLWindow)
+	if (CMSWindow::ms_pSDLRenderer)
+	{
+		SDL_SetRenderDrawColor(CMSWindow::ms_pSDLRenderer, 24, 28, 36, 255);
+		SDL_RenderClear(CMSWindow::ms_pSDLRenderer);
+	}
+	else if (CMSWindow::ms_pSDLWindow)
 	{
 		SDL_Surface* surface = SDL_GetWindowSurface(CMSWindow::ms_pSDLWindow);
 		if (surface)
@@ -752,6 +757,17 @@ void CScreen::Show(HWND hWnd)
 		if (D3DERR_DEVICELOST == hr)
 			RestoreDevice();
 	}	
+
+#if defined(__LINUX__)
+	if (CMSWindow::ms_pSDLRenderer)
+	{
+		SDL_RenderPresent(CMSWindow::ms_pSDLRenderer);
+	}
+	else if (CMSWindow::ms_pSDLWindow)
+	{
+		SDL_UpdateWindowSurface(CMSWindow::ms_pSDLWindow);
+	}
+#endif
 }
 
 void CScreen::Show(RECT * pSrcRect)
@@ -759,7 +775,11 @@ void CScreen::Show(RECT * pSrcRect)
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Present(pSrcRect, NULL, NULL, NULL);
 #if defined(__LINUX__)
-	if (CMSWindow::ms_pSDLWindow)
+	if (CMSWindow::ms_pSDLRenderer)
+	{
+		SDL_RenderPresent(CMSWindow::ms_pSDLRenderer);
+	}
+	else if (CMSWindow::ms_pSDLWindow)
 	{
 		SDL_UpdateWindowSurface(CMSWindow::ms_pSDLWindow);
 	}
@@ -771,10 +791,13 @@ void CScreen::Show(RECT * pSrcRect, HWND hWnd)
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Present(pSrcRect, NULL, hWnd, NULL);
 #if defined(__LINUX__)
-	SDL_Window* pWin = hWnd ? (SDL_Window*)hWnd : CMSWindow::ms_pSDLWindow;
-	if (pWin)
+	if (CMSWindow::ms_pSDLRenderer)
 	{
-		SDL_UpdateWindowSurface(pWin);
+		SDL_RenderPresent(CMSWindow::ms_pSDLRenderer);
+	}
+	else if (CMSWindow::ms_pSDLWindow)
+	{
+		SDL_UpdateWindowSurface(CMSWindow::ms_pSDLWindow);
 	}
 #endif
 }
