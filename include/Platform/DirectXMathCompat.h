@@ -315,6 +315,12 @@ typedef enum _D3DTEXTURESTAGESTATETYPE {
     D3DTSS_RESULTARG             = 28
 } D3DTEXTURESTAGESTATETYPE;
 
+#define D3DTSS_TCI_PASSTHRU                    0x00000000
+#define D3DTSS_TCI_CAMERASPACENORMAL           0x00010000
+#define D3DTSS_TCI_CAMERASPACEPOSITION         0x00020000
+#define D3DTSS_TCI_CAMERASPACEREFLECTIONVECTOR 0x00030000
+#define D3DTSS_TCI_SPHEREMAP                   0x00040000
+
 typedef enum _D3DSAMPLERSTATETYPE {
     D3DSAMP_ADDRESSU      = 1,
     D3DSAMP_ADDRESSV      = 2,
@@ -966,6 +972,16 @@ inline D3DXVECTOR3* D3DXVec3TransformCoord(D3DXVECTOR3* pOut, const D3DXVECTOR3*
         x *= invW; y *= invW; z *= invW;
     }
     pOut->x = x; pOut->y = y; pOut->z = z;
+    return pOut;
+}
+
+inline D3DXVECTOR4* D3DXVec4Transform(D3DXVECTOR4* pOut, const D3DXVECTOR4* pV, const D3DXMATRIX* pM) {
+    if (!pOut || !pV || !pM) return nullptr;
+    float x = pV->x * pM->_11 + pV->y * pM->_21 + pV->z * pM->_31 + pV->w * pM->_41;
+    float y = pV->x * pM->_12 + pV->y * pM->_22 + pV->z * pM->_32 + pV->w * pM->_42;
+    float z = pV->x * pM->_13 + pV->y * pM->_23 + pV->z * pM->_33 + pV->w * pM->_43;
+    float w = pV->x * pM->_14 + pV->y * pM->_24 + pV->z * pM->_34 + pV->w * pM->_44;
+    pOut->x = x; pOut->y = y; pOut->z = z; pOut->w = w;
     return pOut;
 }
 
