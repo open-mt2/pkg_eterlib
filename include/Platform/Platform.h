@@ -290,6 +290,9 @@
     #ifndef _access
         #define _access access
     #endif
+    #ifndef _unlink
+        #define _unlink unlink
+    #endif
     #ifndef _alloca
         #define _alloca alloca
     #endif
@@ -914,6 +917,20 @@
         struct timespec ts;
         clock_gettime(CLOCK_MONOTONIC, &ts);
         return (DWORD)((uint64_t)ts.tv_sec * 1000ULL + (uint64_t)ts.tv_nsec / 1000000ULL);
+    }
+
+    inline BOOL QueryPerformanceCounter(LARGE_INTEGER* lpPerformanceCount) {
+        if (!lpPerformanceCount) return FALSE;
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        lpPerformanceCount->QuadPart = (LONGLONG)ts.tv_sec * 1000000000LL + (LONGLONG)ts.tv_nsec;
+        return TRUE;
+    }
+
+    inline BOOL QueryPerformanceFrequency(LARGE_INTEGER* lpFrequency) {
+        if (!lpFrequency) return FALSE;
+        lpFrequency->QuadPart = 1000000000LL;
+        return TRUE;
     }
 
     #ifndef GetCurrentTime
