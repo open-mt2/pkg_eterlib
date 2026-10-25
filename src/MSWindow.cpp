@@ -142,6 +142,7 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 	m_hWnd = (HWND)ms_pSDLWindow;
 	m_isActive = true;
 	m_isVisible = true;
+	Platform_SetWindowResolution(width, height);
 
 	Tracef("[SDL2] Created native game window: %p ('%s', %dx%d, video driver: %s)\n",
 		ms_pSDLWindow, c_szName, width, height, SDL_GetCurrentVideoDriver());

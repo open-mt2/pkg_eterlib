@@ -127,10 +127,12 @@ bool CMSApplication::MessageProcess()
 		}
 		else if (event.type == SDL_MOUSEMOTION)
 		{
+			Platform_SetCursorPos(event.motion.x, event.motion.y);
 			WindowProcedure(m_hWnd, WM_MOUSEMOVE, 0, MAKELPARAM(event.motion.x, event.motion.y));
 		}
 		else if (event.type == SDL_MOUSEBUTTONDOWN)
 		{
+			Platform_SetCursorPos(event.button.x, event.button.y);
 			UINT uMsg = WM_LBUTTONDOWN;
 			if (event.button.button == SDL_BUTTON_RIGHT) uMsg = WM_RBUTTONDOWN;
 			else if (event.button.button == SDL_BUTTON_MIDDLE) uMsg = WM_MBUTTONDOWN;
@@ -138,6 +140,7 @@ bool CMSApplication::MessageProcess()
 		}
 		else if (event.type == SDL_MOUSEBUTTONUP)
 		{
+			Platform_SetCursorPos(event.button.x, event.button.y);
 			UINT uMsg = WM_LBUTTONUP;
 			if (event.button.button == SDL_BUTTON_RIGHT) uMsg = WM_RBUTTONUP;
 			else if (event.button.button == SDL_BUTTON_MIDDLE) uMsg = WM_MBUTTONUP;
@@ -166,6 +169,11 @@ bool CMSApplication::MessageProcess()
 			}
 		}
 	}
+
+	int mx = 0, my = 0;
+	SDL_GetMouseState(&mx, &my);
+	Platform_SetCursorPos(mx, my);
+
 	return true;
 #else
 	MSG msg;
