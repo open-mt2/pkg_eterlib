@@ -5,6 +5,7 @@
 #if defined(__LINUX__)
 struct SDL_Window;
 struct SDL_Renderer;
+typedef void* SDL_GLContext;
 #endif
 
 class CMSWindow
@@ -46,8 +47,10 @@ class CMSWindow
 #if defined(__LINUX__)
 		static SDL_Window* ms_pSDLWindow;
 		static SDL_Renderer* ms_pSDLRenderer;
+		static SDL_GLContext ms_pGLContext;
 		static SDL_Window* GetSDLWindow() { return ms_pSDLWindow; }
 		static SDL_Renderer* GetSDLRenderer() { return ms_pSDLRenderer; }
+		static SDL_GLContext GetGLContext() { return ms_pGLContext; }
 #endif
 
 		virtual LRESULT	WindowProcedure(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam);

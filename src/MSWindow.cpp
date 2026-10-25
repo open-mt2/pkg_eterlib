@@ -7,8 +7,10 @@
 
 #if defined(__LINUX__)
 #include <SDL2/SDL.h>
+#include <GL/gl.h>
 SDL_Window* CMSWindow::ms_pSDLWindow = NULL;
 SDL_Renderer* CMSWindow::ms_pSDLRenderer = NULL;
+SDL_GLContext CMSWindow::ms_pGLContext = NULL;
 #endif
 
 CMSWindow::TWindowClassSet CMSWindow::ms_stWCSet;
@@ -58,6 +60,11 @@ void CMSWindow::OnSize(WPARAM wParam, LPARAM /*lParam*/)
 void CMSWindow::Destroy()
 {
 #if defined(__LINUX__)
+	if (ms_pGLContext)
+	{
+		SDL_GL_DeleteContext(ms_pGLContext);
+		ms_pGLContext = NULL;
+	}
 	if (ms_pSDLRenderer)
 	{
 		SDL_DestroyRenderer(ms_pSDLRenderer);
@@ -96,13 +103,19 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 
 	int width = 1024;
 	int height = 768;
+
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
 	ms_pSDLWindow = SDL_CreateWindow(
 		(c_szName && c_szName[0]) ? c_szName : "Metin2",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		width,
 		height,
-		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
+		SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 	);
 
 	if (!ms_pSDLWindow)
@@ -111,23 +124,19 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 		return false;
 	}
 
-	ms_pSDLRenderer = SDL_CreateRenderer(ms_pSDLWindow, -1, SDL_RENDERER_ACCELERATED);
-	if (!ms_pSDLRenderer)
+	ms_pGLContext = SDL_GL_CreateContext(ms_pSDLWindow);
+	if (!ms_pGLContext)
 	{
-		Tracef("[SDL2] Accelerated renderer failed (%s). Falling back to software.\n", SDL_GetError());
-		ms_pSDLRenderer = SDL_CreateRenderer(ms_pSDLWindow, -1, SDL_RENDERER_SOFTWARE);
+		TraceError("[SDL2] SDL_GL_CreateContext failed: %s\n", SDL_GetError());
 	}
-
-	if (ms_pSDLRenderer)
+	else
 	{
-		SDL_RendererInfo rInfo;
-		SDL_GetRendererInfo(ms_pSDLRenderer, &rInfo);
-		Tracef("[SDL2] Renderer active: '%s' (flags: 0x%X)\n", rInfo.name, rInfo.flags);
-
-		// Commit initial frame buffer so Wayland compositor immediately maps the surface
-		SDL_SetRenderDrawColor(ms_pSDLRenderer, 24, 28, 36, 255);
-		SDL_RenderClear(ms_pSDLRenderer);
-		SDL_RenderPresent(ms_pSDLRenderer);
+		SDL_GL_MakeCurrent(ms_pSDLWindow, ms_pGLContext);
+		SDL_GL_SetSwapInterval(1);
+		glClearColor(0.094f, 0.11f, 0.14f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		SDL_GL_SwapWindow(ms_pSDLWindow);
+		Tracef("[SDL2] Initialized OpenGL context for window %p\n", ms_pSDLWindow);
 	}
 
 	m_hWnd = (HWND)ms_pSDLWindow;

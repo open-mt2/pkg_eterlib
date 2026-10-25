@@ -5,6 +5,7 @@
 
 #if defined(__LINUX__)
 #include <SDL2/SDL.h>
+#include <GL/gl.h>
 #include "MSWindow.h"
 #endif
 
@@ -623,6 +624,9 @@ void CScreen::ClearDepthBuffer()
 {
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Clear(0L, NULL, D3DCLEAR_ZBUFFER, ms_clearColor, ms_clearDepth, ms_clearStencil);
+#if defined(__LINUX__)
+	glClear(GL_DEPTH_BUFFER_BIT);
+#endif
 }
 
 void CScreen::Clear()
@@ -630,19 +634,13 @@ void CScreen::Clear()
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, ms_clearColor, ms_clearDepth, ms_clearStencil);
 #if defined(__LINUX__)
-	if (CMSWindow::ms_pSDLRenderer)
-	{
-		SDL_SetRenderDrawColor(CMSWindow::ms_pSDLRenderer, 24, 28, 36, 255);
-		SDL_RenderClear(CMSWindow::ms_pSDLRenderer);
-	}
-	else if (CMSWindow::ms_pSDLWindow)
-	{
-		SDL_Surface* surface = SDL_GetWindowSurface(CMSWindow::ms_pSDLWindow);
-		if (surface)
-		{
-			SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 24, 28, 36));
-		}
-	}
+	glClearColor(
+		((ms_clearColor >> 16) & 0xFF) / 255.0f,
+		((ms_clearColor >> 8) & 0xFF) / 255.0f,
+		(ms_clearColor & 0xFF) / 255.0f,
+		((ms_clearColor >> 24) & 0xFF) / 255.0f
+	);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 #endif
 }
 
@@ -759,13 +757,9 @@ void CScreen::Show(HWND hWnd)
 	}	
 
 #if defined(__LINUX__)
-	if (CMSWindow::ms_pSDLRenderer)
+	if (CMSWindow::ms_pSDLWindow)
 	{
-		SDL_RenderPresent(CMSWindow::ms_pSDLRenderer);
-	}
-	else if (CMSWindow::ms_pSDLWindow)
-	{
-		SDL_UpdateWindowSurface(CMSWindow::ms_pSDLWindow);
+		SDL_GL_SwapWindow(CMSWindow::ms_pSDLWindow);
 	}
 #endif
 }
@@ -775,13 +769,9 @@ void CScreen::Show(RECT * pSrcRect)
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Present(pSrcRect, NULL, NULL, NULL);
 #if defined(__LINUX__)
-	if (CMSWindow::ms_pSDLRenderer)
+	if (CMSWindow::ms_pSDLWindow)
 	{
-		SDL_RenderPresent(CMSWindow::ms_pSDLRenderer);
-	}
-	else if (CMSWindow::ms_pSDLWindow)
-	{
-		SDL_UpdateWindowSurface(CMSWindow::ms_pSDLWindow);
+		SDL_GL_SwapWindow(CMSWindow::ms_pSDLWindow);
 	}
 #endif
 }
