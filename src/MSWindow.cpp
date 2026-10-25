@@ -86,7 +86,7 @@ void CMSWindow::Destroy()
 	m_isVisible = false;
 }
 
-bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICON hIcon, int iCursorResource)
+bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICON hIcon, int iCursorResource, int width, int height)
 {
 	//assert(ms_hInstance != NULL);
 	Destroy();
@@ -101,21 +101,28 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 		}
 	}
 
-	int width = 1024;
-	int height = 768;
+	if (width <= 0 || height <= 0)
+	{
+		Platform_GetWindowResolution(&width, &height);
+		if (width <= 0) width = 1024;
+		if (height <= 0) height = 768;
+	}
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
+	// Force floating mode on Linux window managers (X11 & Wayland):
+	// Do NOT specify SDL_WINDOW_RESIZABLE; set min/max size equal to target dimensions.
+	// Tiling WMs (i3, Sway, Hyprland, bspwm) automatically treat fixed-size windows as floating.
 	ms_pSDLWindow = SDL_CreateWindow(
 		(c_szName && c_szName[0]) ? c_szName : "Metin2",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		width,
 		height,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
+		SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN
 	);
 
 	if (!ms_pSDLWindow)
@@ -123,6 +130,12 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 		TraceError("CMSWindow::Create: SDL_CreateWindow failed: %s", SDL_GetError());
 		return false;
 	}
+
+	SDL_SetWindowResizable(ms_pSDLWindow, SDL_FALSE);
+	SDL_SetWindowMinimumSize(ms_pSDLWindow, width, height);
+	SDL_SetWindowMaximumSize(ms_pSDLWindow, width, height);
+	SDL_SetWindowSize(ms_pSDLWindow, width, height);
+	SDL_SetWindowPosition(ms_pSDLWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
 	ms_pGLContext = SDL_GL_CreateContext(ms_pSDLWindow);
 	if (!ms_pGLContext)
@@ -143,8 +156,9 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 	m_isActive = true;
 	m_isVisible = true;
 	Platform_SetWindowResolution(width, height);
+	SetRect(&m_rect, 0, 0, width, height);
 
-	Tracef("[SDL2] Created native game window: %p ('%s', %dx%d, video driver: %s)\n",
+	Tracef("[SDL2] Created native game window (floating): %p ('%s', %dx%d, video driver: %s)\n",
 		ms_pSDLWindow, c_szName, width, height, SDL_GetCurrentVideoDriver());
 	return true;
 #else
@@ -333,7 +347,14 @@ void CMSWindow::AdjustSize(int width, int height)
 {
 #if defined(__LINUX__)
 	if (ms_pSDLWindow)
+	{
+		SDL_SetWindowResizable(ms_pSDLWindow, SDL_FALSE);
+		SDL_SetWindowMinimumSize(ms_pSDLWindow, width, height);
+		SDL_SetWindowMaximumSize(ms_pSDLWindow, width, height);
 		SDL_SetWindowSize(ms_pSDLWindow, width, height);
+		SDL_SetWindowPosition(ms_pSDLWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+	}
+	Platform_SetWindowResolution(width, height);
 	SetRect(&m_rect, 0, 0, width, height);
 #else
 	SetRect(&m_rect, 0, 0, width, height);
@@ -369,7 +390,14 @@ void CMSWindow::SetSize(int width, int height)
 {	
 #if defined(__LINUX__)
 	if (ms_pSDLWindow)
+	{
+		SDL_SetWindowResizable(ms_pSDLWindow, SDL_FALSE);
+		SDL_SetWindowMinimumSize(ms_pSDLWindow, width, height);
+		SDL_SetWindowMaximumSize(ms_pSDLWindow, width, height);
 		SDL_SetWindowSize(ms_pSDLWindow, width, height);
+		SDL_SetWindowPosition(ms_pSDLWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+	}
+	Platform_SetWindowResolution(width, height);
 	SetRect(&m_rect, 0, 0, width, height);
 #else
 	SetWindowPos(m_hWnd, NULL, 0, 0, width, height, SWP_NOZORDER|SWP_NOMOVE);
