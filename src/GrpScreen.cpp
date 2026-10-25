@@ -3,6 +3,11 @@
 #include "Camera.h"
 #include "StateManager.h"
 
+#if defined(__LINUX__)
+#include <SDL2/SDL.h>
+#include "MSWindow.h"
+#endif
+
 DWORD		CScreen::ms_diffuseColor = 0xffffffff;
 DWORD		CScreen::ms_clearColor = 0L;
 DWORD		CScreen::ms_clearStencil = 0L;
@@ -624,6 +629,16 @@ void CScreen::Clear()
 {
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, ms_clearColor, ms_clearDepth, ms_clearStencil);
+#if defined(__LINUX__)
+	if (CMSWindow::ms_pSDLWindow)
+	{
+		SDL_Surface* surface = SDL_GetWindowSurface(CMSWindow::ms_pSDLWindow);
+		if (surface)
+		{
+			SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 24, 28, 36));
+		}
+	}
+#endif
 }
 
 BOOL CScreen::IsLostDevice()
@@ -743,12 +758,25 @@ void CScreen::Show(RECT * pSrcRect)
 {
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Present(pSrcRect, NULL, NULL, NULL);
+#if defined(__LINUX__)
+	if (CMSWindow::ms_pSDLWindow)
+	{
+		SDL_UpdateWindowSurface(CMSWindow::ms_pSDLWindow);
+	}
+#endif
 }
 
 void CScreen::Show(RECT * pSrcRect, HWND hWnd)
 {
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Present(pSrcRect, NULL, hWnd, NULL);
+#if defined(__LINUX__)
+	SDL_Window* pWin = hWnd ? (SDL_Window*)hWnd : CMSWindow::ms_pSDLWindow;
+	if (pWin)
+	{
+		SDL_UpdateWindowSurface(pWin);
+	}
+#endif
 }
 
 void CScreen::ProjectPosition(float x, float y, float z, float * pfX, float * pfY)

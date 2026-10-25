@@ -42,9 +42,12 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     endforeach()
 endif()
 
-# Find dependencies: Threads and libjpeg
+# Find dependencies: Threads, libjpeg, and SDL2
 find_package(Threads REQUIRED)
 find_package(JPEG REQUIRED)
+if(UNIX)
+    find_package(SDL2 REQUIRED)
+endif()
 
 file(GLOB ETERLIB_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB ETERLIB_HEADERS CONFIGURE_DEPENDS
@@ -76,6 +79,7 @@ target_link_libraries(EterLib
         SphereLib
         JPEG::JPEG
         Threads::Threads
+        $<$<PLATFORM_ID:Linux>:SDL2::SDL2>
 )
 
 # Unit Tests

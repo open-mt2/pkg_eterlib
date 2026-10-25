@@ -2,6 +2,10 @@
 
 #include <EterBase/Stl.h>
 
+#if defined(__LINUX__)
+struct SDL_Window;
+#endif
+
 class CMSWindow
 {
 	public:
@@ -37,6 +41,11 @@ class CMSWindow
 
 		HWND GetWindowHandle();
 		HINSTANCE GetInstance();
+
+#if defined(__LINUX__)
+		static SDL_Window* ms_pSDLWindow;
+		static SDL_Window* GetSDLWindow() { return ms_pSDLWindow; }
+#endif
 
 		virtual LRESULT	WindowProcedure(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam);
 		virtual void	OnSize(WPARAM wParam, LPARAM lParam);
