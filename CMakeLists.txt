@@ -48,6 +48,7 @@ find_package(JPEG REQUIRED)
 if(UNIX)
     find_package(SDL2 REQUIRED)
     find_package(OpenGL REQUIRED)
+    find_package(Freetype REQUIRED)
 endif()
 
 file(GLOB ETERLIB_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
@@ -82,6 +83,7 @@ target_link_libraries(EterLib
         Threads::Threads
         $<$<PLATFORM_ID:Linux>:SDL2::SDL2>
         $<$<PLATFORM_ID:Linux>:OpenGL::GL>
+        $<$<PLATFORM_ID:Linux>:Freetype::Freetype>
 )
 
 # Unit Tests

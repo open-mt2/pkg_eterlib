@@ -4,6 +4,66 @@
 
 #include "Util.h"
 
+#if defined(__LINUX__)
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include <unistd.h>
+
+static FT_Library s_ftLibrary = nullptr;
+
+static FT_Face GetFTFace(const char* fontName, int fontSize)
+{
+	if (!s_ftLibrary)
+	{
+		if (FT_Init_FreeType(&s_ftLibrary) != 0)
+			return nullptr;
+	}
+
+	static std::map<std::pair<std::string, int>, FT_Face> s_faceCache;
+	std::pair<std::string, int> key(fontName ? fontName : "", fontSize);
+	auto it = s_faceCache.find(key);
+	if (it != s_faceCache.end())
+		return it->second;
+
+	static const char* s_fontPaths[] = {
+		"/usr/share/fonts/TTF/DejaVuSans.ttf",
+		"/usr/share/fonts/noto/NotoSans-Regular.ttf",
+		"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+		"/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+		"/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf",
+		"/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+		"/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+		nullptr
+	};
+
+	FT_Face face = nullptr;
+	if (fontName && fontName[0] && access(fontName, R_OK) == 0)
+	{
+		if (FT_New_Face(s_ftLibrary, fontName, 0, &face) == 0)
+		{
+			FT_Set_Pixel_Sizes(face, 0, fontSize > 0 ? fontSize : 12);
+			s_faceCache[key] = face;
+			return face;
+		}
+	}
+
+	for (int i = 0; s_fontPaths[i] != nullptr; ++i)
+	{
+		if (access(s_fontPaths[i], R_OK) == 0)
+		{
+			if (FT_New_Face(s_ftLibrary, s_fontPaths[i], 0, &face) == 0)
+			{
+				FT_Set_Pixel_Sizes(face, 0, fontSize > 0 ? fontSize : 12);
+				s_faceCache[key] = face;
+				return face;
+			}
+		}
+	}
+
+	return nullptr;
+}
+#endif
+
 CGraphicFontTexture::CGraphicFontTexture()
 {
 	Initialize();
@@ -207,13 +267,111 @@ CGraphicFontTexture::TCharacterInfomation* CGraphicFontTexture::GetCharacterInfo
 
 CGraphicFontTexture::TCharacterInfomation* CGraphicFontTexture::UpdateCharacterInfomation(TCharacterKey code)
 {
-	HDC hDC = m_dib.GetDCHandle();
-	SelectObject(hDC, GetFont(code.first));
-
 	wchar_t keyValue = code.second;
 
 	if (keyValue == 0x08)
 		keyValue = L' '; // 탭은 공백으로 바꾼다 (아랍 출력시 탭 사용: NAME:\tTEXT -> TEXT\t:NAME 로 전환됨 )
+
+#if defined(__LINUX__)
+	FT_Face face = GetFTFace(m_fontName, m_fontSize);
+	if (face)
+	{
+		FT_Error err = FT_Load_Char(face, keyValue, FT_LOAD_RENDER);
+		(void)err;
+		FT_GlyphSlot slot = face->glyph;
+		FT_Bitmap& bmp = slot->bitmap;
+
+		int advance = (slot->advance.x >> 6);
+		if (advance <= 0) advance = slot->bitmap.width + 1;
+		if (advance <= 0) advance = m_fontSize / 2;
+
+		int cellWidth = advance;
+		if (slot->bitmap_left + (int)bmp.width > cellWidth)
+			cellWidth = slot->bitmap_left + bmp.width + 1;
+		if (cellWidth <= 0) cellWidth = m_fontSize / 2;
+
+		int lineHeight = (face->size->metrics.height >> 6);
+		if (lineHeight <= 0) lineHeight = m_fontSize + 4;
+
+		int ascender = (face->size->metrics.ascender >> 6);
+		if (ascender <= 0) ascender = m_fontSize;
+
+		int width = m_dib.GetWidth();
+		int height = m_dib.GetHeight();
+
+		if (m_x + cellWidth >= (width - 1))
+		{
+			m_y += (m_step + 1);
+			m_step = 0;
+			m_x = 0;
+
+			if (m_y + lineHeight >= (height - 1))
+			{
+				if (!UpdateTexture())
+					return NULL;
+
+				if (!AppendTexture())
+					return NULL;
+
+				m_y = 0;
+				std::memset(m_dib.GetPointer(), 0, (size_t)width * (size_t)height * 4);
+			}
+		}
+
+		DWORD* pdwDIBData = (DWORD*)m_dib.GetPointer();
+		int nDIBWidth = m_dib.GetWidth();
+
+		int top = ascender - slot->bitmap_top;
+		int left = slot->bitmap_left;
+		if (left < 0) left = 0;
+
+		for (int r = 0; r < (int)bmp.rows; ++r)
+		{
+			int dstY = m_y + top + r;
+			if (dstY < 0 || dstY >= height) continue;
+
+			for (int c = 0; c < (int)bmp.width; ++c)
+			{
+				int dstX = m_x + left + c;
+				if (dstX < 0 || dstX >= width) continue;
+
+				uint8_t alpha = bmp.buffer[r * bmp.pitch + c];
+				if (alpha > 32)
+				{
+					uint8_t a4 = (alpha + 8) / 17;
+					if (a4 > 0)
+						pdwDIBData[dstY * nDIBWidth + dstX] = (a4 << 12) | 0x0FFF;
+				}
+			}
+		}
+
+		float rhwidth = 1.0f / float(width);
+		float rhheight = 1.0f / float(height);
+
+		TCharacterInfomation& rNewCharInfo = m_charInfoMap[code];
+
+		rNewCharInfo.index = m_pFontTextureVector.size() - 1;
+		rNewCharInfo.width = cellWidth;
+		rNewCharInfo.height = lineHeight;
+		rNewCharInfo.left = float(m_x) * rhwidth;
+		rNewCharInfo.top = float(m_y) * rhheight;
+		rNewCharInfo.right = float(m_x + cellWidth) * rhwidth;
+		rNewCharInfo.bottom = float(m_y + lineHeight) * rhheight;
+		rNewCharInfo.advance = (float)advance;
+
+		m_x += cellWidth;
+
+		if (m_step < lineHeight)
+			m_step = lineHeight;
+
+		m_isDirty = true;
+
+		return &rNewCharInfo;
+	}
+#endif
+
+	HDC hDC = m_dib.GetDCHandle();
+	SelectObject(hDC, GetFont(code.first));
 
 	ABCFLOAT	stABC;
 	SIZE		size;

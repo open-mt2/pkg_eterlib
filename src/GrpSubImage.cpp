@@ -103,8 +103,8 @@ bool CGraphicSubImage::OnLoad(int iSize, const void* c_pvBuf)
 	if ("2.0"==c_rstVersion)
 	{	
 		const std::string& c_rstSubFileName=GetFileNameString();
-		int nPos=c_rstSubFileName.find_last_of('\\', -1);
-		if (nPos>=0)
+		size_t nPos=c_rstSubFileName.find_last_of("/\\");
+		if (nPos!=std::string::npos)
 		{
 			nPos++;
 			memcpy(szFileName, c_rstSubFileName.c_str(), nPos);
@@ -115,11 +115,25 @@ bool CGraphicSubImage::OnLoad(int iSize, const void* c_pvBuf)
 		else
 		{
 			memcpy(szFileName, c_rstImage.c_str(), c_rstImage.length());
+			szFileName[c_rstImage.length()]='\0';
 		}
 	}
 	else
 	{
 		_snprintf(szFileName, sizeof(szFileName), "%s%s", m_SearchPath, c_rstImage.c_str());
+		if (!CResourceManager::Instance().IsFileExist(szFileName))
+		{
+			const std::string& c_rstSubFileName=GetFileNameString();
+			size_t nPos=c_rstSubFileName.find_last_of("/\\");
+			if (nPos!=std::string::npos)
+			{
+				nPos++;
+				memcpy(szFileName, c_rstSubFileName.c_str(), nPos);
+				szFileName[nPos]='\0';
+				memcpy(szFileName+nPos, c_rstImage.c_str(), c_rstImage.length());
+				szFileName[nPos+c_rstImage.length()]='\0';
+			}
+		}
 	}
 
 	SetImageFileName(szFileName);
