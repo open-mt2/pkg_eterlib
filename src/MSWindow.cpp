@@ -84,6 +84,11 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 	SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR) this);
 	//DestroyWindow(ImmGetDefaultIMEWnd(m_hWnd));
 
+#ifdef __LINUX__
+	m_isActive = true;
+	m_isVisible = true;
+#endif
+
 	return true;
 }
 
@@ -244,6 +249,11 @@ CMSWindow::CMSWindow()
 {
 	m_hWnd=NULL;
 	m_isVisible=false;
+#ifdef __LINUX__
+	m_isActive=true;
+#else
+	m_isActive=false;
+#endif
 }
 
 CMSWindow::~CMSWindow()
