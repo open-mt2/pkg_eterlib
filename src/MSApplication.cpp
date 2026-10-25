@@ -109,10 +109,33 @@ bool CMSApplication::MessageProcess()
 				PostQuitMessage(0);
 				return false;
 			}
+			else if (event.window.event == SDL_WINDOWEVENT_MAXIMIZED)
+			{
+				if (ms_pSDLWindow)
+				{
+					SDL_RestoreWindow(ms_pSDLWindow);
+					int targetW = 1024, targetH = 768;
+					Platform_GetWindowResolution(&targetW, &targetH);
+					if (targetW > 0 && targetH > 0)
+						SDL_SetWindowSize(ms_pSDLWindow, targetW, targetH);
+				}
+			}
 			else if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED || event.window.event == SDL_WINDOWEVENT_RESIZED)
 			{
-				OnSize(SIZE_RESTORED, MAKELPARAM(event.window.data1, event.window.data2));
-				WindowProcedure(m_hWnd, WM_SIZE, SIZE_RESTORED, MAKELPARAM(event.window.data1, event.window.data2));
+				int targetW = 1024, targetH = 768;
+				Platform_GetWindowResolution(&targetW, &targetH);
+				if (targetW > 0 && targetH > 0 && (event.window.data1 != targetW || event.window.data2 != targetH))
+				{
+					if (ms_pSDLWindow)
+					{
+						SDL_SetWindowSize(ms_pSDLWindow, targetW, targetH);
+					}
+				}
+				else
+				{
+					OnSize(SIZE_RESTORED, MAKELPARAM(event.window.data1, event.window.data2));
+					WindowProcedure(m_hWnd, WM_SIZE, SIZE_RESTORED, MAKELPARAM(event.window.data1, event.window.data2));
+				}
 			}
 			else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
 			{
