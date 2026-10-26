@@ -114,7 +114,15 @@ void test_text_tag_and_ime()
     std::wstring stripped = GetTextTagOutputString(tagged.c_str(), static_cast<int>(tagged.size()));
     assert(stripped == L"Hello World");
 
-    CIME ime;
+    class TestIME : public CIME {
+    public:
+        void DeleteFirstChar() {
+            SetCurPos(0);
+            DelCurPos();
+        }
+    };
+
+    TestIME ime;
     ime.Initialize(reinterpret_cast<HWND>(1));
     ime.SetMax(64);
     ime.SetText("Metin2Linux", 11);
@@ -122,9 +130,29 @@ void test_text_tag_and_ime()
     int len = ime.GetText(out);
     assert(len == 11);
     assert(out == "Metin2Linux");
+
+    // Test Delete key behavior (DelCurPos)
+    ime.DeleteFirstChar();
+    len = ime.GetText(out);
+    assert(len == 10);
+    assert(out == "etin2Linux");
+
     ime.Uninitialize();
 
     std::printf("[PASS] test_text_tag_and_ime\n");
+}
+
+void test_platform_quit_message()
+{
+    assert(!Platform_IsQuitRequested());
+    PostQuitMessage(0);
+    assert(Platform_IsQuitRequested());
+
+    // Reset for other potential tests
+    Platform_GetQuitRequested().store(false);
+    assert(!Platform_IsQuitRequested());
+
+    std::printf("[PASS] test_platform_quit_message\n");
 }
 
 void test_graphic_dib()
@@ -150,6 +178,7 @@ int main()
     test_ray_and_grpmath();
     test_text_tag_and_ime();
     test_graphic_dib();
+    test_platform_quit_message();
 
     std::printf("All EterLib smoke tests passed!\n");
     return 0;

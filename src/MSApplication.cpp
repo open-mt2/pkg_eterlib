@@ -11,26 +11,63 @@
 #define MAKEWPARAM(l, h) ((WPARAM)(((WORD)(((DWORD_PTR)(l)) & 0xffff)) | ((DWORD)((WORD)(((DWORD_PTR)(h)) & 0xffff))) << 16))
 #endif
 
+static void SDL_QuitCallback(int /*exitCode*/)
+{
+	SDL_Event quitEvent;
+	memset(&quitEvent, 0, sizeof(quitEvent));
+	quitEvent.type = SDL_QUIT;
+	quitEvent.quit.type = SDL_QUIT;
+	quitEvent.quit.timestamp = SDL_GetTicks();
+	SDL_PushEvent(&quitEvent);
+}
+
 static WPARAM SDLKeycodeToVK(SDL_Keycode key)
 {
 	switch (key)
 	{
-		case SDLK_ESCAPE: return VK_ESCAPE;
+		case SDLK_BACKSPACE: return VK_BACK;
+		case SDLK_TAB: return VK_TAB;
+		case SDLK_CLEAR: return VK_CLEAR;
 		case SDLK_RETURN:
 		case SDLK_KP_ENTER: return VK_RETURN;
-		case SDLK_TAB: return VK_TAB;
-		case SDLK_BACKSPACE: return VK_BACK;
+		case SDLK_PAUSE: return VK_PAUSE;
+		case SDLK_CAPSLOCK: return VK_CAPITAL;
+		case SDLK_ESCAPE: return VK_ESCAPE;
 		case SDLK_SPACE: return VK_SPACE;
-		case SDLK_UP: return VK_UP;
-		case SDLK_DOWN: return VK_DOWN;
+		case SDLK_PAGEUP: return VK_PRIOR;
+		case SDLK_PAGEDOWN: return VK_NEXT;
+		case SDLK_END: return VK_END;
+		case SDLK_HOME: return VK_HOME;
 		case SDLK_LEFT: return VK_LEFT;
+		case SDLK_UP: return VK_UP;
 		case SDLK_RIGHT: return VK_RIGHT;
+		case SDLK_DOWN: return VK_DOWN;
+		case SDLK_PRINTSCREEN: return VK_SNAPSHOT;
+		case SDLK_INSERT: return VK_INSERT;
+		case SDLK_DELETE: return VK_DELETE;
+		case SDLK_HELP: return VK_HELP;
 		case SDLK_LSHIFT:
 		case SDLK_RSHIFT: return VK_SHIFT;
 		case SDLK_LCTRL:
 		case SDLK_RCTRL: return VK_CONTROL;
 		case SDLK_LALT:
 		case SDLK_RALT: return VK_MENU;
+		case SDLK_KP_0: return VK_NUMPAD0;
+		case SDLK_KP_1: return VK_NUMPAD1;
+		case SDLK_KP_2: return VK_NUMPAD2;
+		case SDLK_KP_3: return VK_NUMPAD3;
+		case SDLK_KP_4: return VK_NUMPAD4;
+		case SDLK_KP_5: return VK_NUMPAD5;
+		case SDLK_KP_6: return VK_NUMPAD6;
+		case SDLK_KP_7: return VK_NUMPAD7;
+		case SDLK_KP_8: return VK_NUMPAD8;
+		case SDLK_KP_9: return VK_NUMPAD9;
+		case SDLK_KP_MULTIPLY: return VK_MULTIPLY;
+		case SDLK_KP_PLUS: return VK_ADD;
+		case SDLK_KP_MINUS: return VK_SUBTRACT;
+		case SDLK_KP_DECIMAL:
+		case SDLK_KP_PERIOD: return VK_DECIMAL;
+		case SDLK_KP_DIVIDE: return VK_DIVIDE;
 		case SDLK_F1: return VK_F1;
 		case SDLK_F2: return VK_F2;
 		case SDLK_F3: return VK_F3;
@@ -43,6 +80,7 @@ static WPARAM SDLKeycodeToVK(SDL_Keycode key)
 		case SDLK_F10: return VK_F10;
 		case SDLK_F11: return VK_F11;
 		case SDLK_F12: return VK_F12;
+		case SDLK_SCROLLLOCK: return VK_SCROLL;
 		default:
 			if (key >= SDLK_a && key <= SDLK_z)
 				return 'A' + (key - SDLK_a);
@@ -55,6 +93,9 @@ static WPARAM SDLKeycodeToVK(SDL_Keycode key)
 
 CMSApplication::CMSApplication()
 {
+#if defined(__LINUX__)
+	Platform_SetQuitCallback(SDL_QuitCallback);
+#endif
 }
 
 CMSApplication::~CMSApplication()
@@ -76,6 +117,8 @@ void CMSApplication::MessageLoop()
 bool CMSApplication::IsMessage()
 {
 #if defined(__LINUX__)
+	if (Platform_IsQuitRequested())
+		return true;
 	SDL_PumpEvents();
 	return (SDL_PeepEvents(NULL, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) > 0);
 #else
@@ -91,13 +134,16 @@ bool CMSApplication::IsMessage()
 bool CMSApplication::MessageProcess()
 {
 #if defined(__LINUX__)
+	if (Platform_IsQuitRequested())
+		return false;
+
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
-		if (event.type == SDL_QUIT)
+		if (Platform_IsQuitRequested() || event.type == SDL_QUIT)
 		{
-			Tracef("[SDL2] Received SDL_QUIT event. Exiting MessageProcess.\n");
-			PostQuitMessage(0);
+			Tracef("[SDL2] Received SDL_QUIT event or quit requested. Exiting MessageProcess.\n");
+			Platform_GetQuitRequested().store(true);
 			return false;
 		}
 
@@ -106,7 +152,7 @@ bool CMSApplication::MessageProcess()
 			if (event.window.event == SDL_WINDOWEVENT_CLOSE)
 			{
 				Tracef("[SDL2] Received SDL_WINDOWEVENT_CLOSE event. Exiting MessageProcess.\n");
-				PostQuitMessage(0);
+				Platform_GetQuitRequested().store(true);
 				return false;
 			}
 			else if (event.window.event == SDL_WINDOWEVENT_MAXIMIZED)
@@ -191,7 +237,16 @@ bool CMSApplication::MessageProcess()
 				WindowProcedure(m_hWnd, WM_CHAR, (unsigned char)event.text.text[i], 0);
 			}
 		}
+
+		if (Platform_IsQuitRequested())
+		{
+			Tracef("[SDL2] Quit requested during event processing. Exiting MessageProcess.\n");
+			return false;
+		}
 	}
+
+	if (Platform_IsQuitRequested())
+		return false;
 
 	int mx = 0, my = 0;
 	SDL_GetMouseState(&mx, &my);
