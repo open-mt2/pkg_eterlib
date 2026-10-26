@@ -1,5 +1,8 @@
 #include "StdAfx.h"
 #include <EterBase/CRC32.h>
+#if defined(__LINUX__)
+#include <GL/gl.h>
+#endif
 #include "GrpExpandedImageInstance.h"
 #include "StateManager.h"
 
@@ -124,7 +127,21 @@ void CGraphicExpandedImageInstance::OnRender()
 		STATEMANAGER.SetTexture(0, pTexture->GetD3DTexture());
 		STATEMANAGER.SetTexture(1, NULL);
 		STATEMANAGER.SetFVF(D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1);
-		STATEMANAGER.DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 4, 0, 2);	
+
+#if defined(__LINUX__)
+		// Set wrap modes dynamically: clamp non-repeating axes to avoid 1px border bleed
+		GLint wrapS = (su < -0.001f || eu > 1.001f) ? GL_REPEAT : GL_CLAMP_TO_EDGE;
+		GLint wrapT = (sv < -0.001f || ev > 1.001f) ? GL_REPEAT : GL_CLAMP_TO_EDGE;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+#endif
+
+		STATEMANAGER.DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 4, 0, 2);
+
+#if defined(__LINUX__)
+		if (wrapS == GL_REPEAT) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		if (wrapT == GL_REPEAT) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#endif
 	}
 	//STATEMANAGER.DrawIndexedPrimitiveUP(D3DPT_TRIANGLELIST, 0, 4, 2, c_FillRectIndices, D3DFMT_INDEX16, vertices, sizeof(TPDTVertex));
 	/////////////////////////////////////////////////////////////

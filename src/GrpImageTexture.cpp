@@ -123,7 +123,7 @@ bool CGraphicImageTexture::CreateDDSTexture(CDXTCImage & image, const BYTE * /*c
 	if (FAILED(D3DXCreateTexture(	ms_lpd3dDevice, image.m_nWidth, image.m_nHeight,
 									mipmapCount, 0, format, pool, &lpd3dTexture)))
 	{
-		TraceError("CreateDDSTexture: Cannot creatre texture");
+		TraceError("CreateDDSTexture: Cannot create texture for '%s' (%ux%u)", m_stFileName.c_str(), image.m_nWidth, image.m_nHeight);
 		return false;
 	}
 
@@ -217,12 +217,12 @@ bool CGraphicImageTexture::CreateFromMemoryFile(UINT bufSize, const void * c_pvB
 		D3DXIMAGE_INFO imageInfo;
 		if (FAILED(D3DXGetImageInfoFromFileInMemory(c_pvBuf, bufSize, &imageInfo)))
 		{
-			TraceError("CreateFromMemoryFile: Cannot GetImageInfo from texture");
+			TraceError("CreateFromMemoryFile: Cannot GetImageInfo from texture '%s' (bufSize: %u)", m_stFileName.c_str(), bufSize);
 			return false;
 		}
 		if (FAILED(D3DXCreateTextureFromFileInMemoryEx(ms_lpd3dDevice, c_pvBuf, bufSize, imageInfo.Width, imageInfo.Height, D3DX_DEFAULT, 0, d3dFmt, D3DPOOL_MANAGED, dwFilter, dwFilter, 0xffff00ff, NULL, NULL, &m_lpd3dTexture)))
 		{
-			TraceError("CreateFromMemoryFile: Cannot create texture");
+			TraceError("CreateFromMemoryFile: Cannot create texture '%s' (%ux%u)", m_stFileName.c_str(), imageInfo.Width, imageInfo.Height);
 			return false;
 		}
 

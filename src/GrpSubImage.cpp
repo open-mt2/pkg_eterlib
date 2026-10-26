@@ -37,8 +37,17 @@ bool CGraphicSubImage::SetImageFileName(const char* c_szFileName)
 {
 	CResource* pResource = CResourceManager::Instance().GetResourcePointer(c_szFileName);
 
-	if (!pResource->IsType(CGraphicImage::Type()))
+	if (!pResource)
+	{
+		TraceError("[SUBIMAGE] %s: Parent image '%s' could not be found or loaded", GetFileName(), c_szFileName);
 		return false;
+	}
+
+	if (!pResource->IsType(CGraphicImage::Type()))
+	{
+		TraceError("[SUBIMAGE] %s: Parent resource '%s' is not CGraphicImage", GetFileName(), c_szFileName);
+		return false;
+	}
 
 	SetImagePointer(static_cast<CGraphicImage*>(pResource));
 	return true;
@@ -136,7 +145,11 @@ bool CGraphicSubImage::OnLoad(int iSize, const void* c_pvBuf)
 		}
 	}
 
-	SetImageFileName(szFileName);
+	if (!SetImageFileName(szFileName))
+	{
+		TraceError("[SUBIMAGE] %s: Failed to load parent image '%s'", GetFileName(), szFileName);
+		return false;
+	}
 
 	SetRectPosition(atoi(c_rstLeft.c_str()),
 					atoi(c_rstTop.c_str()),
