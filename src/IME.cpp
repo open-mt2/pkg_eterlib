@@ -2334,6 +2334,15 @@ LRESULT CIME::WMChar(HWND /*hWnd*/, UINT /*uiMsg*/, WPARAM wParam, LPARAM lParam
 		return 0;
 		break;
 
+	case 127:
+		if(ms_bCaptureInput == false)
+			return 0;
+		DelCurPos();
+		if(ms_pEvent)
+			ms_pEvent->OnUpdate();
+		return 0;
+		break;
+
 	default:
 		if(ms_pEvent) {
 			if (ms_pEvent->OnWM_CHAR(wParam, lParam))

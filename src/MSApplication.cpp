@@ -21,8 +21,19 @@ static void SDL_QuitCallback(int /*exitCode*/)
 	SDL_PushEvent(&quitEvent);
 }
 
-static WPARAM SDLKeycodeToVK(SDL_Keycode key)
+static WPARAM SDLKeycodeToVK(SDL_Keycode key, SDL_Scancode scancode = SDL_SCANCODE_UNKNOWN)
 {
+	if (scancode == SDL_SCANCODE_DELETE || key == SDLK_DELETE)
+		return VK_DELETE;
+	if (scancode == SDL_SCANCODE_BACKSPACE || key == SDLK_BACKSPACE)
+		return VK_BACK;
+	if (scancode == SDL_SCANCODE_KP_PERIOD || key == SDLK_KP_PERIOD)
+	{
+		if (!(SDL_GetModState() & KMOD_NUM))
+			return VK_DELETE;
+		return VK_DECIMAL;
+	}
+
 	switch (key)
 	{
 		case SDLK_BACKSPACE: return VK_BACK;
@@ -222,12 +233,17 @@ bool CMSApplication::MessageProcess()
 		}
 		else if (event.type == SDL_KEYDOWN)
 		{
-			WPARAM vKey = SDLKeycodeToVK(event.key.keysym.sym);
+			WPARAM vKey = SDLKeycodeToVK(event.key.keysym.sym, event.key.keysym.scancode);
 			WindowProcedure(m_hWnd, WM_KEYDOWN, vKey, 0);
+
+			if (event.key.keysym.scancode == SDL_SCANCODE_BACKSPACE || event.key.keysym.sym == SDLK_BACKSPACE)
+			{
+				WindowProcedure(m_hWnd, WM_CHAR, 8, 0);
+			}
 		}
 		else if (event.type == SDL_KEYUP)
 		{
-			WPARAM vKey = SDLKeycodeToVK(event.key.keysym.sym);
+			WPARAM vKey = SDLKeycodeToVK(event.key.keysym.sym, event.key.keysym.scancode);
 			WindowProcedure(m_hWnd, WM_KEYUP, vKey, 0);
 		}
 		else if (event.type == SDL_TEXTINPUT)
