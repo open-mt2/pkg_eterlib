@@ -146,6 +146,16 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 	{
 		SDL_GL_MakeCurrent(ms_pSDLWindow, ms_pGLContext);
 		SDL_GL_SetSwapInterval(1);
+
+		typedef void (*PFNGLCLIPCONTROLPROC)(GLenum origin, GLenum depth);
+		PFNGLCLIPCONTROLPROC pfnClipControl = (PFNGLCLIPCONTROLPROC)SDL_GL_GetProcAddress("glClipControl");
+		if (pfnClipControl)
+		{
+			// Direct3D 9 depth range [0, 1] natively handled by OpenGL clipping
+			pfnClipControl(GL_LOWER_LEFT, 0x935F /* GL_ZERO_TO_ONE */);
+			Tracef("[SDL2] glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE) enabled\n");
+		}
+
 		glClearColor(0.094f, 0.11f, 0.14f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		SDL_GL_SwapWindow(ms_pSDLWindow);
