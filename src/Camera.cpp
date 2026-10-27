@@ -155,15 +155,15 @@ bool CCamera::Drag(int nMouseX, int nMouseY, LPPOINT lpReturnPoint)
 	long lMouseY = nMouseY;
 	
 	float fNewPitchVelocity = (float)(lMouseY - m_lMousePosY) * m_fResistance;
-	float fNewRotationVelocity = -(float)(lMouseX - m_lMousePosX) * m_fResistance;
+	float fNewRotationVelocity = (float)(lMouseX - m_lMousePosX) * m_fResistance;
 
 	m_fPitchSum += fNewPitchVelocity;
 	m_fRollSum += fNewRotationVelocity;
 	
 	if (CAMERA_STATE_CANTGOLEFT == GetCameraState())
-		fNewRotationVelocity = fMIN(0.0f, fNewRotationVelocity);
-	if (CAMERA_STATE_CANTGORIGHT == GetCameraState())
 		fNewRotationVelocity = fMAX(0.0f, fNewRotationVelocity);
+	if (CAMERA_STATE_CANTGORIGHT == GetCameraState())
+		fNewRotationVelocity = fMIN(0.0f, fNewRotationVelocity);
 	if (CAMERA_STATE_CANTGODOWN == GetCameraState())
 		fNewPitchVelocity = fMAX(0.0f, fNewPitchVelocity);
 	
