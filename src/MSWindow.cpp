@@ -166,6 +166,11 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 	m_isActive = true;
 	m_isVisible = true;
 	Platform_SetWindowResolution(width, height);
+	Platform_SetWarpMouseCallback([](int x, int y) {
+		if (ms_pSDLWindow) {
+			SDL_WarpMouseInWindow(ms_pSDLWindow, x, y);
+		}
+	});
 	SetRect(&m_rect, 0, 0, width, height);
 
 	Tracef("[SDL2] Created native game window (floating): %p ('%s', %dx%d, video driver: %s)\n",
