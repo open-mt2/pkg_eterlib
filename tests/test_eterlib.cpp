@@ -9,6 +9,7 @@
 #include <EterLib/TextTag.h>
 #include <EterLib/IME.h>
 #include <EterLib/GrpDIB.h>
+#include <EterLib/GrpImageInstance.h>
 
 #include <cassert>
 #include <cmath>
@@ -155,6 +156,20 @@ void test_platform_quit_message()
     std::printf("[PASS] test_platform_quit_message\n");
 }
 
+void test_empty_image_instance_texture_reference()
+{
+    // Regression test: GetTextureReference() on an empty image instance must
+    // not dereference a null image (this crashed in the SpeedTree renderer).
+    CGraphicImageInstance image;
+    assert(image.IsEmpty());
+
+    const CGraphicTexture& texture = image.GetTextureReference();
+    assert(texture.GetD3DTexture() == nullptr);
+    assert(texture.GetWidth() == 0 || texture.GetWidth() >= 0);
+
+    std::printf("[PASS] test_empty_image_instance_texture_reference\n");
+}
+
 void test_graphic_dib()
 {
     CGraphicDib dib;
@@ -177,6 +192,7 @@ int main()
     test_network_address();
     test_ray_and_grpmath();
     test_text_tag_and_ime();
+    test_empty_image_instance_texture_reference();
     test_graphic_dib();
     test_platform_quit_message();
 

@@ -99,6 +99,21 @@ void CGraphicImageInstance::OnRender()
 
 const CGraphicTexture & CGraphicImageInstance::GetTextureReference() const
 {
+	// Callers commonly do GetTextureReference().GetD3DTexture() without
+	// checking IsEmpty(); returning a reference to a null image used to
+	// crash (e.g. a SpeedTree without a self-shadow texture).
+	class CEmptyGraphicTexture : public CGraphicTexture
+	{
+		public:
+			CEmptyGraphicTexture() {}
+	};
+
+	if (m_roImage.IsNull())
+	{
+		static CEmptyGraphicTexture s_kEmptyTexture;
+		return s_kEmptyTexture;
+	}
+
 	return m_roImage->GetTextureReference();
 }
 
