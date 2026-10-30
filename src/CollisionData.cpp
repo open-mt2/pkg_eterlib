@@ -149,6 +149,8 @@ CBaseCollisionInstance * CBaseCollisionInstance::BuildCollisionInstance(const CS
 
 				D3DXMatrixIdentity(&OBBData.matRot); OBBData.matRot = *pMat;
 				OBBData.matRot._41 = 0; OBBData.matRot._42 = 0; OBBData.matRot._43 = 0; OBBData.matRot._44 = 1;
+				if (!D3DXMatrixInverse(&OBBData.matRotInv, NULL, &OBBData.matRot))
+					D3DXMatrixIdentity(&OBBData.matRotInv);
 
 
 
@@ -742,7 +744,7 @@ bool COBBCollisionInstance::OnMovementCollisionDynamicSphere(const CDynamicSpher
 {
 	D3DXVECTOR3 v3Center = 0.5f * (m_attribute.v3Min + m_attribute.v3Max);
 	D3DXVECTOR3 v3Sphere = s.v3Position - v3Center;
-	D3DXVec3TransformCoord(&v3Sphere, &v3Sphere, &m_attribute.matRot);
+	D3DXVec3TransformCoord(&v3Sphere, &v3Sphere, &m_attribute.matRotInv);
 	v3Sphere = v3Sphere + v3Center;
 	
 	D3DXVECTOR3 v3Point = v3Sphere;
@@ -756,7 +758,7 @@ bool COBBCollisionInstance::OnMovementCollisionDynamicSphere(const CDynamicSpher
 	if(GetVector3Distance(v3Point, v3Sphere) <= s.fRadius * s.fRadius) { return true; }
 
 	v3Sphere = s.v3LastPosition - v3Center;
-	D3DXVec3TransformCoord(&v3Sphere, &v3Sphere, &m_attribute.matRot);
+	D3DXVec3TransformCoord(&v3Sphere, &v3Sphere, &m_attribute.matRotInv);
 	v3Sphere = v3Sphere + v3Center;
 	
 	v3Point = v3Sphere;
@@ -777,7 +779,7 @@ bool COBBCollisionInstance::OnCollisionDynamicSphere(const CDynamicSphereInstanc
 	
 	D3DXVECTOR3 v3Center = 0.5f * (m_attribute.v3Min + m_attribute.v3Max);
 	D3DXVECTOR3 v3Sphere = s.v3Position - v3Center;
-	D3DXVec3TransformCoord(&v3Sphere, &v3Sphere, &m_attribute.matRot);
+	D3DXVec3TransformCoord(&v3Sphere, &v3Sphere, &m_attribute.matRotInv);
 	v3Sphere = v3Sphere + v3Center;
 
 	D3DXVECTOR3 v3Point = v3Sphere;
@@ -791,7 +793,7 @@ bool COBBCollisionInstance::OnCollisionDynamicSphere(const CDynamicSphereInstanc
 	if(GetVector3Distance(v3Point, v3Sphere) <= s.fRadius * s.fRadius) { return true; }
 
 	v3Sphere = s.v3LastPosition - v3Center;
-	D3DXVec3TransformCoord(&v3Sphere, &v3Sphere, &m_attribute.matRot);
+	D3DXVec3TransformCoord(&v3Sphere, &v3Sphere, &m_attribute.matRotInv);
 	v3Sphere = v3Sphere + v3Center;
 	
 	v3Point = v3Sphere;
