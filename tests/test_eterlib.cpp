@@ -132,8 +132,9 @@ void test_text_tag_and_ime()
     assert(len == 11);
     assert(out == "Metin2Linux");
 
-    // Test Delete key behavior (DelCurPos)
+    // Test Delete key behavior (DelCurPos). GetText appends to the string.
     ime.DeleteFirstChar();
+    out.clear();
     len = ime.GetText(out);
     assert(len == 10);
     assert(out == "etin2Linux");
