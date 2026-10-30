@@ -28,6 +28,7 @@ typedef struct SOBBData
 	D3DXVECTOR3 v3Min;
 	D3DXVECTOR3 v3Max;
 	D3DXMATRIX matRot;
+	D3DXMATRIX matRotInv; // world -> box local, used by the collision tests
 
 } TOBBData;
 
