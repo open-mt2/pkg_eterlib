@@ -3,11 +3,11 @@
 #include "Camera.h"
 #include "StateManager.h"
 
-#if defined(OPENMT2_PLATFORM_LINUX)
+// T1.9: the window and the renderer are SDL2 + GL on every target (T1.2,
+// T1.4), so this translation unit needs them on Windows too.
 #include <SDL2/SDL.h>
-#include <GL/gl.h>
+#include <Platform/GLCompat.h>
 #include "MSWindow.h"
-#endif
 
 DWORD		CScreen::ms_diffuseColor = 0xffffffff;
 DWORD		CScreen::ms_clearColor = 0L;

@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include <EterBase/CRC32.h>
 #if defined(OPENMT2_PLATFORM_LINUX)
-#include <GL/gl.h>
+#include <Platform/GLCompat.h>
 #endif
 #include "GrpExpandedImageInstance.h"
 #include "StateManager.h"
