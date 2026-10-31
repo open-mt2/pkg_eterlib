@@ -3,7 +3,7 @@
 #include "SdlPlatform.h"
 
 #include <SDL2/SDL.h>
-#include <GL/gl.h>
+#include <Platform/GLCompat.h>
 
 // Windows GL headers only ship the 1.1 subset; the constant comes from
 // glext.h, which the loader work (T1.4) adds.
@@ -14,6 +14,11 @@
 SDL_Window* CMSWindow::ms_pSDLWindow = NULL;
 SDL_Renderer* CMSWindow::ms_pSDLRenderer = NULL;
 SDL_GLContext CMSWindow::ms_pGLContext = NULL;
+
+static void* SDLGetProcAddress(const char* name)
+{
+	return (void*) SDL_GL_GetProcAddress(name);
+}
 
 HINSTANCE CMSWindow::ms_hInstance = NULL;
 
@@ -138,6 +143,11 @@ bool CMSWindow::Create(const char* c_szName, int /*brush*/, DWORD /*cs*/, DWORD 
 	{
 		SDL_GL_MakeCurrent(ms_pSDLWindow, ms_pGLContext);
 		SDL_GL_SetSwapInterval(1);
+
+		if (!Platform_LoadGLFunctions(SDLGetProcAddress))
+		{
+			TraceError("[SDL2] Platform_LoadGLFunctions failed: missing GL entry points\n");
+		}
 
 		typedef void (*PFNGLCLIPCONTROLPROC)(GLenum origin, GLenum depth);
 		PFNGLCLIPCONTROLPROC pfnClipControl = (PFNGLCLIPCONTROLPROC)SDL_GL_GetProcAddress("glClipControl");
