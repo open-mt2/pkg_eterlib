@@ -18,14 +18,23 @@ bool Platform_DecodeImage(const void* data, size_t size, uint32_t* outW, uint32_
 #endif
 
 #if defined(_WIN32) && !defined(USE_PLATFORM_D3D_COMPAT)
+    // Legacy Windows branch (D1/D2 retired the native path). The DirectX SDK
+    // headers are gone: the compat vocabulary below is the only contract, so a
+    // Windows build defines USE_PLATFORM_D3D_COMPAT and takes the else branch.
     #include <d3d9.h>
-    #include <directxsdk/d3dx9.h>
-    #include <dinput.h>
 #else
 
 // Renderer seam contract (T1.7): resources are named by opaque handles so no
 // GL type leaks above the backend (invariant R2).
 #include "RenderBackend.h"
+
+// d3d9.h defines this; <windows.h> alone does not. The compat vocabulary needs
+// it for the DXT formats (T1.5 drops the DirectX SDK headers).
+#ifndef MAKEFOURCC
+#define MAKEFOURCC(ch0, ch1, ch2, ch3) \
+    ((DWORD)(BYTE)(ch0) | ((DWORD)(BYTE)(ch1) << 8) | \
+     ((DWORD)(BYTE)(ch2) << 16) | ((DWORD)(BYTE)(ch3) << 24))
+#endif
 
 // =============================================================
 // 1. D3D9 Basic Types, Constants & Enums
@@ -2165,5 +2174,48 @@ inline HRESULT D3DXAssembleShaderFromFileA(LPCSTR, const void*, void*, DWORD, LP
     return S_OK;
 }
 #define D3DXAssembleShaderFromFile D3DXAssembleShaderFromFileA
+
+// =============================================================
+// 7. DirectInput 8 Stubs
+// =============================================================
+#define DIRECTINPUT_VERSION 0x0800
+#define DISCL_EXCLUSIVE     0x00000001
+#define DISCL_NONEXCLUSIVE  0x00000002
+#define DISCL_FOREGROUND    0x00000004
+#define DISCL_BACKGROUND    0x00000008
+
+struct DIDATAFORMAT { int dummy; };
+static const GUID IID_IDirectInput8 = { 0xbf798030, 0x483a, 0x4da2, { 0xaa, 0x99, 0x5d, 0x64, 0xed, 0x36, 0x97, 0x00 } };
+static const GUID GUID_SysKeyboard  = { 0x6f1d2b61, 0xd5a0, 0x11cf, { 0xbf, 0xc7, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00 } };
+static const DIDATAFORMAT c_dfDIKeyboard = { 0 };
+
+class IDirectInputDevice8A : public IDirect3DResource9 {
+public:
+    HRESULT SetDataFormat(const DIDATAFORMAT*) { return S_OK; }
+    HRESULT SetCooperativeLevel(HWND, DWORD) { return S_OK; }
+    HRESULT Acquire() { return S_OK; }
+    HRESULT Unacquire() { return S_OK; }
+    HRESULT GetDeviceState(DWORD cbData, LPVOID lpvData) {
+        if (lpvData && cbData > 0) std::memset(lpvData, 0, cbData);
+        return S_OK;
+    }
+};
+typedef IDirectInputDevice8A* LPDIRECTINPUTDEVICE8;
+
+class IDirectInput8A : public IDirect3DResource9 {
+public:
+    HRESULT CreateDevice(REFGUID, LPDIRECTINPUTDEVICE8* lplpDirectInputDevice, void*) {
+        if (!lplpDirectInputDevice) return E_INVALIDARG;
+        *lplpDirectInputDevice = new IDirectInputDevice8A();
+        return S_OK;
+    }
+};
+typedef IDirectInput8A* LPDIRECTINPUT8;
+
+inline HRESULT DirectInput8Create(HINSTANCE, DWORD, REFIID, LPVOID* ppvOut, void*) {
+    if (!ppvOut) return E_INVALIDARG;
+    *ppvOut = new IDirectInput8A();
+    return S_OK;
+}
 
 #endif
