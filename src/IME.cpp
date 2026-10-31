@@ -6,6 +6,24 @@
 #ifdef _WIN32
 #include "msctf.h"
 #include <oleauto.h>
+
+#if defined(_WIN32)
+// MinGW's msctf.h declares the TSF UI-element interfaces but not their UUIDs,
+// so __mingw_uuidof<> has no definition for them (T1.9).
+__CRT_UUID_DECL(ITfThreadMgr, 0xAA80E801, 0x2021, 0x11D2, 0x93, 0xE0, 0x00, 0x60, 0xB0, 0x67, 0xB8, 0x6E)
+__CRT_UUID_DECL(ITfThreadMgrEx, 0x3E90ADE3, 0x7594, 0x4CB0, 0xBB, 0x58, 0x69, 0x62, 0x8F, 0x5F, 0x09, 0x1B)
+__CRT_UUID_DECL(ITfUIElementSink, 0xEA1EA134, 0x19DF, 0x11D7, 0xA6, 0xD2, 0x00, 0x06, 0x5B, 0x84, 0x43, 0x5C)
+__CRT_UUID_DECL(ITfCompartmentEventSink, 0x743ABD5F, 0x749F, 0x47FD, 0x8E, 0x4E, 0x85, 0xB3, 0xE7, 0x93, 0xED, 0xE1)
+__CRT_UUID_DECL(ITfInputProcessorProfiles, 0x1F02B6C5, 0x7842, 0x4EE6, 0x8A, 0x0B, 0x9A, 0x24, 0x18, 0x3A, 0x95, 0xCA)
+__CRT_UUID_DECL(ITfInputProcessorProfileMgr, 0x71C6E74C, 0x0F28, 0x11D8, 0xA8, 0x2A, 0x00, 0x06, 0x5B, 0x84, 0x43, 0x5C)
+__CRT_UUID_DECL(ITfInputProcessorProfileActivationSink, 0x71C6E74D, 0x0F28, 0x11D8, 0xA8, 0x2A, 0x00, 0x06, 0x5B, 0x84, 0x43, 0x5C)
+__CRT_UUID_DECL(ITfSource, 0x4EA48A35, 0x60AE, 0x446F, 0x8F, 0xD6, 0xE6, 0xA8, 0xD8, 0x24, 0x59, 0xF7)
+__CRT_UUID_DECL(ITfUIElementMgr, 0xEA1EA135, 0x19DF, 0x11D7, 0xA6, 0xD2, 0x00, 0x06, 0x5B, 0x84, 0x43, 0x5C)
+__CRT_UUID_DECL(ITfUIElement, 0xEA1EA136, 0x19DF, 0x11D7, 0xA6, 0xD2, 0x00, 0x06, 0x5B, 0x84, 0x43, 0x5C)
+__CRT_UUID_DECL(ITfCandidateListUIElementBehavior, 0xEA1EA137, 0x19DF, 0x11D7, 0xA6, 0xD2, 0x00, 0x06, 0x5B, 0x84, 0x43, 0x5C)
+__CRT_UUID_DECL(ITfCandidateListUIElement, 0xEA1EA138, 0x19DF, 0x11D7, 0xA6, 0xD2, 0x00, 0x06, 0x5B, 0x84, 0x43, 0x5C)
+__CRT_UUID_DECL(ITfReadingInformationUIElement, 0xEA1EA139, 0x19DF, 0x11D7, 0xA6, 0xD2, 0x00, 0x06, 0x5B, 0x84, 0x43, 0x5C)
+#endif
 #endif
 
 #define COUNTOF(a)						( sizeof( a ) / sizeof( ( a )[0] ) )
@@ -706,7 +724,7 @@ void CIME::FinalizeString(bool bSend)
 	if (ms_bUILessMode)
 	{
 		// For some reason ImmNotifyIME doesn't work on DaYi and Array CHT IMEs. Cancel composition string by setting zero-length string.
-		ImmSetCompositionStringW(himc, SCS_SETSTR, L"", sizeof(wchar_t), L"", sizeof(wchar_t));
+		ImmSetCompositionStringW(himc, SCS_SETSTR, (LPVOID)L"", sizeof(wchar_t), (LPVOID)L"", sizeof(wchar_t));
 	}
 	// the following line is necessary as Korean IME doesn't close cand list when comp string is cancelled.
 	ImmNotifyIME( himc, NI_CLOSECANDIDATE, 0, 0 );	
@@ -1061,7 +1079,7 @@ void CIME::CandidateProcess(HIMC hImc)
 			UINT i;
 			for (i = 0; i < ms_dwCandidateCount; i++)
 			{
-				UINT uLen = lstrlenW((LPWSTR)((DWORD)lpCandidateList + lpCandidateList->dwOffset[i])) + (3 - sizeof(WCHAR));
+				UINT uLen = lstrlenW((LPWSTR)((DWORD_PTR)lpCandidateList + lpCandidateList->dwOffset[i])) + (3 - sizeof(WCHAR));
 				if (uLen + cChars > maxCandChar)
 				{
 					if (i > ms_dwCandidateSelection)
@@ -1087,7 +1105,7 @@ void CIME::CandidateProcess(HIMC hImc)
 		//printf( "SEL: %d, START: %d, PAGED: %d\n", ms_dwCandidateSelection, iStartOfPage, ms_dwCandidatePageSize );
 	    memset(&ms_wszCandidate, 0, sizeof(ms_wszCandidate));
 	    for(UINT i = iStartOfPage, j = 0; (DWORD)i < lpCandidateList->dwCount && j < ms_dwCandidatePageSize; i++, j++) {
-			wcscpy( ms_wszCandidate[j], (LPWSTR)( (DWORD)lpCandidateList + lpCandidateList->dwOffset[i] ) );
+			wcscpy( ms_wszCandidate[j], (LPWSTR)( (DWORD_PTR)lpCandidateList + lpCandidateList->dwOffset[i] ) );
 	    }
 
 		// don't display selection in candidate list in case of Korean and old Chinese IME.
@@ -1283,7 +1301,7 @@ DWORD CIME::GetImeId( UINT uIndex )
 		return ms_adwId[uIndex];
 	hklPrev = hkl;
 
-	DWORD dwLang = ((DWORD)hkl & 0xffff);
+	DWORD dwLang = (DWORD)((DWORD_PTR)hkl & 0xffff);
 
 	if ( ms_bUILessMode && GETLANG() == LANG_CHT ) {
 		// In case of Vista, artifitial value is returned so that it's not considered as older IME.
@@ -1564,7 +1582,7 @@ void CIME::CheckToggleState()
 
 	/* Check Toggle State */ 
 	bool bIme = ImmIsIME( ms_hklCurrent ) != 0
-		&& ( ( 0xF0000000 & (DWORD)ms_hklCurrent ) == 0xE0000000 ); // Hack to detect IME correctly. When IME is running as TIP, ImmIsIME() returns true for CHT US keyboard.
+		&& ( ( 0xF0000000 & (DWORD)(DWORD_PTR)ms_hklCurrent ) == 0xE0000000 ); // Hack to detect IME correctly. When IME is running as TIP, ImmIsIME() returns true for CHT US keyboard.
 	ms_bChineseIME = ( GETPRIMLANG() == LANG_CHINESE ) && bIme;
 
 	HIMC himc;
