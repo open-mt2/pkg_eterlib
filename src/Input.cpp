@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "Input.h"
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 #include <SDL2/SDL.h>
 #endif
 
@@ -89,7 +89,7 @@ bool CInputKeyboard::InitializeKeyboard(HWND hWnd)
 
 void CInputKeyboard::UpdateKeyboard()
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	const Uint8* state = SDL_GetKeyboardState(NULL);
 	if (state)
 	{

@@ -2,7 +2,7 @@
 
 #include <EterBase/Stl.h>
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 struct SDL_Window;
 struct SDL_Renderer;
 typedef void* SDL_GLContext;
@@ -44,7 +44,7 @@ class CMSWindow
 		HWND GetWindowHandle();
 		HINSTANCE GetInstance();
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 		static SDL_Window* ms_pSDLWindow;
 		static SDL_Renderer* ms_pSDLRenderer;
 		static SDL_GLContext ms_pGLContext;

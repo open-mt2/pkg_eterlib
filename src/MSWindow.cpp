@@ -5,7 +5,7 @@
 #include <windowsx.h>
 #endif
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 #include <SDL2/SDL.h>
 #include <GL/gl.h>
 SDL_Window* CMSWindow::ms_pSDLWindow = NULL;
@@ -59,7 +59,7 @@ void CMSWindow::OnSize(WPARAM wParam, LPARAM /*lParam*/)
 
 void CMSWindow::Destroy()
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pGLContext)
 	{
 		SDL_GL_DeleteContext(ms_pGLContext);
@@ -91,7 +91,7 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 	//assert(ms_hInstance != NULL);
 	Destroy();
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (SDL_WasInit(SDL_INIT_VIDEO) == 0)
 	{
 		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
@@ -203,7 +203,7 @@ void CMSWindow::SetVisibleMode(bool isVisible)
 {
 	m_isVisible = isVisible;
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 	{
 		if (isVisible)
@@ -226,7 +226,7 @@ void CMSWindow::SetVisibleMode(bool isVisible)
 void CMSWindow::Show()
 {
 	m_isVisible = true;
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 		SDL_ShowWindow(ms_pSDLWindow);
 #else
@@ -237,7 +237,7 @@ void CMSWindow::Show()
 void CMSWindow::Hide()
 {
 	m_isVisible = false;
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 		SDL_HideWindow(ms_pSDLWindow);
 #else
@@ -267,7 +267,7 @@ HWND CMSWindow::GetWindowHandle()
 
 int	CMSWindow::GetScreenWidth()
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	SDL_DisplayMode dm;
 	if (SDL_GetCurrentDisplayMode(0, &dm) == 0)
 		return dm.w;
@@ -277,7 +277,7 @@ int	CMSWindow::GetScreenWidth()
 
 int	CMSWindow::GetScreenHeight()
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	SDL_DisplayMode dm;
 	if (SDL_GetCurrentDisplayMode(0, &dm) == 0)
 		return dm.h;
@@ -287,7 +287,7 @@ int	CMSWindow::GetScreenHeight()
 
 void CMSWindow::GetWindowRect(RECT* prc)
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow && prc)
 	{
 		int x = 0, y = 0, w = 0, h = 0;
@@ -305,7 +305,7 @@ void CMSWindow::GetWindowRect(RECT* prc)
 
 void CMSWindow::GetClientRect(RECT* prc)
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow && prc)
 	{
 		int w = 0, h = 0;
@@ -322,7 +322,7 @@ void CMSWindow::GetClientRect(RECT* prc)
 
 void CMSWindow::GetMousePosition(POINT* ppt)
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ppt)
 	{
 		int x = 0, y = 0;
@@ -338,7 +338,7 @@ void CMSWindow::GetMousePosition(POINT* ppt)
 
 void CMSWindow::SetPosition(int x, int y)
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 		SDL_SetWindowPosition(ms_pSDLWindow, x, y);
 #else
@@ -360,7 +360,7 @@ void CMSWindow::SetCenterPosition()
 
 void CMSWindow::AdjustSize(int width, int height)
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 	{
 		SDL_SetWindowResizable(ms_pSDLWindow, SDL_FALSE);
@@ -393,7 +393,7 @@ void CMSWindow::AdjustSize(int width, int height)
 
 void CMSWindow::SetText(const char* c_szText)
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow && c_szText)
 		SDL_SetWindowTitle(ms_pSDLWindow, c_szText);
 #else
@@ -403,7 +403,7 @@ void CMSWindow::SetText(const char* c_szText)
 
 void CMSWindow::SetSize(int width, int height)
 {	
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 	{
 		SDL_SetWindowResizable(ms_pSDLWindow, SDL_FALSE);
@@ -456,7 +456,7 @@ CMSWindow::CMSWindow()
 {
 	m_hWnd=NULL;
 	m_isVisible=false;
-#ifdef __LINUX__
+#ifdef OPENMT2_PLATFORM_LINUX
 	m_isActive=true;
 #else
 	m_isActive=false;

@@ -12,7 +12,12 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     if(WIN32)
         add_compile_definitions(WIN32 _WINDOWS _CRT_SECURE_NO_WARNINGS)
     else()
-        add_compile_definitions(__LINUX__ _GNU_SOURCE)
+        add_compile_definitions(
+            OPENMT2_PLATFORM_LINUX=1
+            OPENMT2_RENDERER_GL=1
+            OPENMT2_SDL_WINDOW=1
+            _GNU_SOURCE
+        )
         add_compile_options(
             -Wall
             -Wextra

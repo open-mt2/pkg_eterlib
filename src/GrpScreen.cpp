@@ -3,7 +3,7 @@
 #include "Camera.h"
 #include "StateManager.h"
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 #include <SDL2/SDL.h>
 #include <GL/gl.h>
 #include "MSWindow.h"
@@ -624,7 +624,7 @@ void CScreen::ClearDepthBuffer()
 {
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Clear(0L, NULL, D3DCLEAR_ZBUFFER, ms_clearColor, ms_clearDepth, ms_clearStencil);
-#if defined(__LINUX__)
+#if defined(OPENMT2_RENDERER_GL)
 	glClear(GL_DEPTH_BUFFER_BIT);
 #endif
 }
@@ -633,7 +633,7 @@ void CScreen::Clear()
 {
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Clear(0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, ms_clearColor, ms_clearDepth, ms_clearStencil);
-#if defined(__LINUX__)
+#if defined(OPENMT2_RENDERER_GL)
 	glClearColor(
 		((ms_clearColor >> 16) & 0xFF) / 255.0f,
 		((ms_clearColor >> 8) & 0xFF) / 255.0f,
@@ -756,7 +756,7 @@ void CScreen::Show(HWND hWnd)
 			RestoreDevice();
 	}	
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_SDL_WINDOW)
 	if (CMSWindow::ms_pSDLWindow)
 	{
 		SDL_GL_SwapWindow(CMSWindow::ms_pSDLWindow);
@@ -768,7 +768,7 @@ void CScreen::Show(RECT * pSrcRect)
 {
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Present(pSrcRect, NULL, NULL, NULL);
-#if defined(__LINUX__)
+#if defined(OPENMT2_SDL_WINDOW)
 	if (CMSWindow::ms_pSDLWindow)
 	{
 		SDL_GL_SwapWindow(CMSWindow::ms_pSDLWindow);
@@ -780,7 +780,7 @@ void CScreen::Show(RECT * pSrcRect, HWND hWnd)
 {
 	assert(ms_lpd3dDevice != NULL);
 	ms_lpd3dDevice->Present(pSrcRect, NULL, hWnd, NULL);
-#if defined(__LINUX__)
+#if defined(OPENMT2_SDL_WINDOW)
 	if (CMSWindow::ms_pSDLRenderer)
 	{
 		SDL_RenderPresent(CMSWindow::ms_pSDLRenderer);
