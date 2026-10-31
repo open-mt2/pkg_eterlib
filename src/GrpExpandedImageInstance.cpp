@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 #include <EterBase/CRC32.h>
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 #include <GL/gl.h>
 #endif
 #include "GrpExpandedImageInstance.h"
@@ -128,7 +128,7 @@ void CGraphicExpandedImageInstance::OnRender()
 		STATEMANAGER.SetTexture(1, NULL);
 		STATEMANAGER.SetFVF(D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_TEX1);
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 		// Set wrap modes dynamically: clamp non-repeating axes to avoid 1px border bleed
 		GLint wrapS = (su < -0.001f || eu > 1.001f) ? GL_REPEAT : GL_CLAMP_TO_EDGE;
 		GLint wrapT = (sv < -0.001f || ev > 1.001f) ? GL_REPEAT : GL_CLAMP_TO_EDGE;
@@ -138,7 +138,7 @@ void CGraphicExpandedImageInstance::OnRender()
 
 		STATEMANAGER.DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 4, 0, 2);
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 		if (wrapS == GL_REPEAT) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		if (wrapT == GL_REPEAT) glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 #endif

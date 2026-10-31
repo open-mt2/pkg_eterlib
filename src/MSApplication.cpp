@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "MSApplication.h"
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 #include <SDL2/SDL.h>
 
 #ifndef MAKELPARAM
@@ -104,7 +104,7 @@ static WPARAM SDLKeycodeToVK(SDL_Keycode key, SDL_Scancode scancode = SDL_SCANCO
 
 CMSApplication::CMSApplication()
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	Platform_SetQuitCallback(SDL_QuitCallback);
 #endif
 }
@@ -127,7 +127,7 @@ void CMSApplication::MessageLoop()
 
 bool CMSApplication::IsMessage()
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (Platform_IsQuitRequested())
 		return true;
 	SDL_PumpEvents();
@@ -144,7 +144,7 @@ bool CMSApplication::IsMessage()
 
 bool CMSApplication::MessageProcess()
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	if (Platform_IsQuitRequested())
 		return false;
 

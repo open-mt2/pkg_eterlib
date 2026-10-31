@@ -74,7 +74,7 @@ void CGraphicDib::SetBkMode(int iBkMode)
 	::SetBkMode(m_hDC, iBkMode);
 }
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <unistd.h>
@@ -109,7 +109,7 @@ static void EnsureDIBFT()
 
 void CGraphicDib::TextOut(int ix, int iy, const char * c_szText)
 {
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	EnsureDIBFT();
 	if (s_dibFtFace && m_pvBuf && c_szText)
 	{

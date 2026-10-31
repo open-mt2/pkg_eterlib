@@ -4,7 +4,7 @@
 
 #include "Util.h"
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <unistd.h>
@@ -272,7 +272,7 @@ CGraphicFontTexture::TCharacterInfomation* CGraphicFontTexture::UpdateCharacterI
 	if (keyValue == 0x08)
 		keyValue = L' '; // 탭은 공백으로 바꾼다 (아랍 출력시 탭 사용: NAME:\tTEXT -> TEXT\t:NAME 로 전환됨 )
 
-#if defined(__LINUX__)
+#if defined(OPENMT2_PLATFORM_LINUX)
 	FT_Face face = GetFTFace(m_fontName, m_fontSize);
 	if (face)
 	{
