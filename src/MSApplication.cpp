@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "MSApplication.h"
+#include "SdlPlatform.h"
 
-#if defined(OPENMT2_PLATFORM_LINUX)
 #include <SDL2/SDL.h>
 
 #ifndef MAKELPARAM
@@ -100,13 +100,10 @@ static WPARAM SDLKeycodeToVK(SDL_Keycode key, SDL_Scancode scancode = SDL_SCANCO
 			return (WPARAM)key;
 	}
 }
-#endif
 
 CMSApplication::CMSApplication()
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	Platform_SetQuitCallback(SDL_QuitCallback);
-#endif
 }
 
 CMSApplication::~CMSApplication()
@@ -127,24 +124,14 @@ void CMSApplication::MessageLoop()
 
 bool CMSApplication::IsMessage()
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (Platform_IsQuitRequested())
 		return true;
 	SDL_PumpEvents();
 	return (SDL_PeepEvents(NULL, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) > 0);
-#else
-	MSG msg;
-
-	if (!PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
-		return false;
-
-	return true;
-#endif
 }
 
 bool CMSApplication::MessageProcess()
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (Platform_IsQuitRequested())
 		return false;
 
@@ -269,16 +256,6 @@ bool CMSApplication::MessageProcess()
 	Platform_SetCursorPos(mx, my);
 
 	return true;
-#else
-	MSG msg;
-
-	if (!GetMessage(&msg, NULL, 0, 0))
-		return false;
-
-	TranslateMessage(&msg);
-	DispatchMessage(&msg);
-	return true;
-#endif
 }
 
 LRESULT CMSApplication::WindowProcedure(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
@@ -286,7 +263,7 @@ LRESULT CMSApplication::WindowProcedure(HWND hWnd, UINT uiMsg, WPARAM wParam, LP
 	switch (uiMsg)
 	{
 		case WM_CLOSE:
-			PostQuitMessage(0);
+			Platform_GetQuitRequested().store(true);
 			break;
 	}
 

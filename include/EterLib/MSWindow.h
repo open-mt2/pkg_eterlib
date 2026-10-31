@@ -2,11 +2,7 @@
 
 #include <EterBase/Stl.h>
 
-#if defined(OPENMT2_PLATFORM_LINUX)
-struct SDL_Window;
-struct SDL_Renderer;
-typedef void* SDL_GLContext;
-#endif
+#include <SDL2/SDL.h>
 
 class CMSWindow
 {
@@ -44,31 +40,22 @@ class CMSWindow
 		HWND GetWindowHandle();
 		HINSTANCE GetInstance();
 
-#if defined(OPENMT2_PLATFORM_LINUX)
 		static SDL_Window* ms_pSDLWindow;
 		static SDL_Renderer* ms_pSDLRenderer;
 		static SDL_GLContext ms_pGLContext;
 		static SDL_Window* GetSDLWindow() { return ms_pSDLWindow; }
 		static SDL_Renderer* GetSDLRenderer() { return ms_pSDLRenderer; }
 		static SDL_GLContext GetGLContext() { return ms_pGLContext; }
-#endif
 
 		virtual LRESULT	WindowProcedure(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam);
 		virtual void	OnSize(WPARAM wParam, LPARAM lParam);
-		
-	protected:
-		const char* RegisterWindowClass(DWORD style, int brush, WNDPROC pfnWndProc, HICON hIcon=NULL, int iCursorResource=32512);
 
-	protected:
-		typedef std::set<char*, stl_sz_less> TWindowClassSet;
-		
 	protected:
 		HWND m_hWnd;
 		RECT m_rect;
 		bool m_isActive;
 		bool m_isVisible;
-		
+
 	protected:
-		static TWindowClassSet ms_stWCSet;
 		static HINSTANCE ms_hInstance;
 };

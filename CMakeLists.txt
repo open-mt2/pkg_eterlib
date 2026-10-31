@@ -47,10 +47,10 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     endforeach()
 endif()
 
-# Find dependencies: Threads, libjpeg, SDL2, and OpenGL
+# Find dependencies: Threads, SDL2 (both targets since T1.2), OpenGL/Freetype
 find_package(Threads REQUIRED)
+find_package(SDL2 REQUIRED)
 if(UNIX)
-    find_package(SDL2 REQUIRED)
     find_package(OpenGL REQUIRED)
     find_package(Freetype REQUIRED)
 endif()
@@ -84,7 +84,7 @@ target_link_libraries(EterLib
         EterImageLib
         SphereLib
         Threads::Threads
-        $<$<PLATFORM_ID:Linux>:SDL2::SDL2>
+        SDL2::SDL2
         $<$<PLATFORM_ID:Linux>:OpenGL::GL>
         $<$<PLATFORM_ID:Linux>:Freetype::Freetype>
 )
