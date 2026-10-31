@@ -7,7 +7,7 @@
 #include <vector>
 
 #ifdef _WIN32
-#include <directxsdk/d3dx9.h>
+#include "Platform/DirectXMathCompat.h"
 #else
 #include "Platform/DirectXMathCompat.h"
 #endif

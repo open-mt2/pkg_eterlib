@@ -23,12 +23,10 @@
 #endif
 
 #ifdef _WIN32
-#include <d3d9.h>
-#include <directxsdk/d3dx9.h>
-
-#define DIRECTINPUT_VERSION 0x0800
-
-#include <dinput.h>
+// T4.1: the DirectX SDK is gone. D3D9 (and the D3DX helpers the client uses)
+// come from the compatibility header, which the Windows build selects with
+// USE_PLATFORM_D3D_COMPAT; the platform libraries are linked by CMake.
+#include "Platform/DirectXMathCompat.h"
 
 #pragma warning ( disable : 4201 )
 #include <mmsystem.h>
@@ -36,9 +34,7 @@
 #include <process.h>
 #include <direct.h>
 #include <malloc.h>
-
-#pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "d3d9.lib")
+#include <io.h>
 
 #ifndef VC_EXTRALEAN
 #include <winsock.h>
