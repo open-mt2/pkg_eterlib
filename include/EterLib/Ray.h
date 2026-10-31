@@ -1,11 +1,8 @@
 #pragma once
 
 #include <cassert>
-#ifdef _WIN32
-#include <directxsdk/d3dx9.h>
-#else
+// T4.1: one D3D9 vocabulary on every target.
 #include "Platform/DirectXMathCompat.h"
-#endif
 
 class CRay
 {

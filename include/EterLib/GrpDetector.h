@@ -1,10 +1,7 @@
 #pragma once
 
-#ifdef _WIN32
-#include <d3d9.h>
-#else
+// T4.1: one D3D9 vocabulary on every target.
 #include "Platform/DirectXMathCompat.h"
-#endif
 #include <string>
 
 typedef BOOL(*PFNCONFIRMDEVICE) (D3DCAPS9& rkD3DCaps, UINT uBehavior, D3DFORMAT eD3DFmt);

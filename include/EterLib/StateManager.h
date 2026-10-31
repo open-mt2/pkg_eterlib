@@ -40,12 +40,8 @@
 
 #pragma once
 
-#ifdef _WIN32
-#include <d3d9.h>
-#include <directxsdk/d3dx9.h>
-#else
+// T4.1: one D3D9 vocabulary on every target.
 #include "Platform/DirectXMathCompat.h"
-#endif
 
 #include <vector>
 
