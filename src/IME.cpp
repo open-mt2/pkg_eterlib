@@ -1,5 +1,13 @@
 #include "StdAfx.h"
+
+// The SDL implementation lives in IME_Sdl.cpp (T1.6); this legacy IMM/TSF
+// path is only compiled for a non-SDL Windows build.
+#if !defined(OPENMT2_SDL_WINDOW)
+
 #include "IME.h"
+#if defined(_WIN32)
+#include "Dimm.h"
+#endif
 #include "TextTag.h"
 #include <EterBase/Utils.h>
 #include <cwctype>
@@ -2382,3 +2390,4 @@ LRESULT CIME::WMChar(HWND /*hWnd*/, UINT /*uiMsg*/, WPARAM wParam, LPARAM lParam
 	return 0;
 }
 
+#endif // !OPENMT2_SDL_WINDOW

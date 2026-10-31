@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "MSApplication.h"
 #include "SdlPlatform.h"
+#include "IME.h"
 
 #include <SDL2/SDL.h>
 
@@ -191,6 +192,16 @@ bool CMSApplication::MessageProcess()
 				m_isActive = false;
 				WindowProcedure(m_hWnd, WM_ACTIVATEAPP, WA_INACTIVE, 0);
 			}
+		}
+		else if (event.type == SDL_TEXTEDITING)
+		{
+			// OS IME composition; SDL forwards start/length in characters.
+			CIME::OnSDLTextEditing(event.edit.text, event.edit.start, event.edit.length);
+		}
+		else if (event.type == SDL_TEXTINPUT)
+		{
+			// Committed text from the OS IME.
+			CIME::OnSDLTextInput(event.text.text);
 		}
 		else if (event.type == SDL_MOUSEMOTION)
 		{
