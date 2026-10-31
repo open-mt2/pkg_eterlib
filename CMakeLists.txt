@@ -49,7 +49,6 @@ endif()
 
 # Find dependencies: Threads, libjpeg, SDL2, and OpenGL
 find_package(Threads REQUIRED)
-find_package(JPEG REQUIRED)
 if(UNIX)
     find_package(SDL2 REQUIRED)
     find_package(OpenGL REQUIRED)
@@ -84,7 +83,6 @@ target_link_libraries(EterLib
         EterPack
         EterImageLib
         SphereLib
-        JPEG::JPEG
         Threads::Threads
         $<$<PLATFORM_ID:Linux>:SDL2::SDL2>
         $<$<PLATFORM_ID:Linux>:OpenGL::GL>
