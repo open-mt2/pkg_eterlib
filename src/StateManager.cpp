@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "StateManager.h"
+#include "ShaderStats.h"
 
 //#define StateManager_Assert(a) if (!(a)) puts("assert"#a)
 #define StateManager_Assert(a) assert(a)
@@ -543,6 +544,10 @@ void CStateManager::SetVertexShader(LPDIRECT3DVERTEXSHADER9 dwShader)
 	{
 		m_CurrentState.m_dwVertexShader = dwShader;
 		m_lpD3DDev->SetVertexShader(dwShader);
+
+		// D13: this is a no-op on the GL path.
+		if (dwShader)
+			CShaderStats::OnBound(true);
 	}
 }
 
@@ -595,6 +600,10 @@ void CStateManager::SetPixelShader(LPDIRECT3DPIXELSHADER9 dwShader)
 	if (m_CurrentState.m_dwPixelShader != dwShader) {
 		m_CurrentState.m_dwPixelShader = dwShader;
 		m_lpD3DDev->SetPixelShader(dwShader);
+
+		// D13: this is a no-op on the GL path.
+		if (dwShader)
+			CShaderStats::OnBound(false);
 	}
 }
 
@@ -701,6 +710,7 @@ void CStateManager::RestoreVertexShaderConstant(UINT dwRegister, UINT dwConstant
 void CStateManager::SetVertexShaderConstant(DWORD dwRegister,CONST void* pConstantData,DWORD dwConstantCount)
 {
 	m_lpD3DDev->SetVertexShaderConstantF(dwRegister, (const float*)pConstantData, dwConstantCount);
+	CShaderStats::OnConstants(true);
 
 	// Set the renderstate and remember it.
 	for (DWORD i = 0; i < dwConstantCount; i++)
@@ -725,6 +735,7 @@ void CStateManager::SavePixelShaderConstant(DWORD dwRegister,CONST void* pConsta
 void CStateManager::SetPixelShaderConstant(DWORD dwRegister,CONST void* pConstantData,DWORD dwConstantCount)
 {
 	m_lpD3DDev->SetPixelShaderConstantF(dwRegister, (const float*)pConstantData, dwConstantCount);
+	CShaderStats::OnConstants(false);
 
 	// Set the renderstate and remember it.
 	for (DWORD i = 0; i < dwConstantCount; i++)

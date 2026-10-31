@@ -2,6 +2,7 @@
 #include "GrpPixelShader.h"
 #include "GrpD3DXBuffer.h"
 #include "StateManager.h"
+#include "ShaderStats.h"
 
 CPixelShader::CPixelShader()
 {
@@ -36,6 +37,9 @@ bool CPixelShader::CreateFromDiskFile(const char* c_szFileName)
 
 	if (FAILED(ms_lpd3dDevice->CreatePixelShader((const DWORD*)lpd3dxShaderBuffer->GetBufferPointer(), &m_handle)))
 		return false;
+
+	// D13: the GL path returns a dummy handle; record the parity delta.
+	CShaderStats::OnCreated(false, c_szFileName);
 
 	return true;
 }

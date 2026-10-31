@@ -2,6 +2,7 @@
 #include "GrpVertexShader.h"
 #include "GrpD3DXBuffer.h"
 #include "StateManager.h"
+#include "ShaderStats.h"
 
 CVertexShader::CVertexShader()
 {
@@ -38,6 +39,9 @@ bool CVertexShader::CreateFromDiskFile(const char* c_szFileName, const DWORD* c_
 
 	if (FAILED(ms_lpd3dDevice->CreateVertexShader((const DWORD*)lpd3dxShaderBuffer->GetBufferPointer(), &m_handle)))
 		return false;
+
+	// D13: the GL path returns a dummy handle; record the parity delta.
+	CShaderStats::OnCreated(true, c_szFileName);
 
 	return true;
 }
