@@ -1,37 +1,34 @@
 #include "StdAfx.h"
 #include "MSWindow.h"
+#include "SdlPlatform.h"
 
-#ifdef _WIN32
-#include <windowsx.h>
-#endif
-
-#if defined(OPENMT2_PLATFORM_LINUX)
 #include <SDL2/SDL.h>
 #include <GL/gl.h>
+
+// Windows GL headers only ship the 1.1 subset; the constant comes from
+// glext.h, which the loader work (T1.4) adds.
+#ifndef GL_LOWER_LEFT
+#define GL_LOWER_LEFT 0x8CA1
+#endif
+
 SDL_Window* CMSWindow::ms_pSDLWindow = NULL;
 SDL_Renderer* CMSWindow::ms_pSDLRenderer = NULL;
 SDL_GLContext CMSWindow::ms_pGLContext = NULL;
-#endif
 
-CMSWindow::TWindowClassSet CMSWindow::ms_stWCSet;
 HINSTANCE CMSWindow::ms_hInstance = NULL;
-
-LRESULT CALLBACK MSWindowProcedure(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
-{	
-	CMSWindow * pWnd = (CMSWindow *) GetWindowLongPtr(hWnd, GWLP_USERDATA);
-
-	if (pWnd)
-		return pWnd->WindowProcedure(hWnd, uiMsg, wParam, lParam);	
-
-	return DefWindowProc(hWnd, uiMsg, wParam, lParam);
-}
 
 LRESULT CMSWindow::WindowProcedure(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {
+	// The window is SDL-owned on every target (T1.2); the WM_* messages are
+	// synthesised by CMSApplication from SDL events, so there is no Win32
+	// window procedure to chain to.
+	(void) hWnd;
+	(void) lParam;
+
 	switch (uiMsg)
 	{
 		case WM_SIZE:
-			OnSize(wParam, lParam);
+			OnSize(wParam, 0);
 			break;
 
 		case WM_ACTIVATEAPP:
@@ -39,14 +36,13 @@ LRESULT CMSWindow::WindowProcedure(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM 
 			break;
 	}
 
-	return DefWindowProc(hWnd, uiMsg, wParam, lParam);
+	return 0;
 }
 
 void CMSWindow::OnSize(WPARAM wParam, LPARAM /*lParam*/)
 {
 	if (wParam == SIZE_MINIMIZED) 
 	{
-		InvalidateRect(m_hWnd, NULL, true);
 		m_isActive = false;        
 		m_isVisible = false;
 	}
@@ -59,7 +55,6 @@ void CMSWindow::OnSize(WPARAM wParam, LPARAM /*lParam*/)
 
 void CMSWindow::Destroy()
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pGLContext)
 	{
 		SDL_GL_DeleteContext(ms_pGLContext);
@@ -75,23 +70,15 @@ void CMSWindow::Destroy()
 		SDL_DestroyWindow(ms_pSDLWindow);
 		ms_pSDLWindow = NULL;
 	}
-#endif
-	if (!m_hWnd)
-		return;
 
-	if (IsWindow(m_hWnd))
-		DestroyWindow(m_hWnd);
-	
 	m_hWnd = NULL;
 	m_isVisible = false;
 }
 
-bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICON hIcon, int iCursorResource, int width, int height)
+bool CMSWindow::Create(const char* c_szName, int /*brush*/, DWORD /*cs*/, DWORD /*ws*/, HICON /*hIcon*/, int /*iCursorResource*/, int width, int height)
 {
-	//assert(ms_hInstance != NULL);
 	Destroy();
 
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (SDL_WasInit(SDL_INIT_VIDEO) == 0)
 	{
 		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
@@ -108,12 +95,16 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 		if (height <= 0) height = 768;
 	}
 
+	Uint32 windowFlags = SDL_WINDOW_SHOWN;
+
+#if defined(OPENMT2_RENDERER_GL)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	windowFlags |= SDL_WINDOW_OPENGL;
+#endif
 
-	// Force floating mode on Linux window managers (X11 & Wayland):
 	// Do NOT specify SDL_WINDOW_RESIZABLE; set min/max size equal to target dimensions.
 	// Tiling WMs (i3, Sway, Hyprland, bspwm) automatically treat fixed-size windows as floating.
 	ms_pSDLWindow = SDL_CreateWindow(
@@ -122,7 +113,7 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 		SDL_WINDOWPOS_CENTERED,
 		width,
 		height,
-		SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN
+		windowFlags
 	);
 
 	if (!ms_pSDLWindow)
@@ -137,6 +128,7 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 	SDL_SetWindowSize(ms_pSDLWindow, width, height);
 	SDL_SetWindowPosition(ms_pSDLWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
+#if defined(OPENMT2_RENDERER_GL)
 	ms_pGLContext = SDL_GL_CreateContext(ms_pSDLWindow);
 	if (!ms_pGLContext)
 	{
@@ -161,6 +153,7 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 		SDL_GL_SwapWindow(ms_pSDLWindow);
 		Tracef("[SDL2] Initialized OpenGL context for window %p\n", ms_pSDLWindow);
 	}
+#endif
 
 	m_hWnd = (HWND)ms_pSDLWindow;
 	m_isActive = true;
@@ -176,34 +169,12 @@ bool CMSWindow::Create(const char* c_szName, int brush, DWORD cs, DWORD ws, HICO
 	Tracef("[SDL2] Created native game window (floating): %p ('%s', %dx%d, video driver: %s)\n",
 		ms_pSDLWindow, c_szName, width, height, SDL_GetCurrentVideoDriver());
 	return true;
-#else
-	const char* c_szClassName = RegisterWindowClass(cs, brush, MSWindowProcedure, hIcon, iCursorResource);
-
-	m_hWnd = CreateWindow(
-						c_szClassName,
-						c_szName,
-						ws, 
-						0, 0, 0, 0, 
-						NULL,
-						NULL, 
-						ms_hInstance,
-						NULL);
-
-	if (!m_hWnd)
-		return false;
-
-	SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR) this);
-	//DestroyWindow(ImmGetDefaultIMEWnd(m_hWnd));
-
-	return true;
-#endif
 }
 
 void CMSWindow::SetVisibleMode(bool isVisible)
 {
 	m_isVisible = isVisible;
 
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 	{
 		if (isVisible)
@@ -211,38 +182,20 @@ void CMSWindow::SetVisibleMode(bool isVisible)
 		else
 			SDL_HideWindow(ms_pSDLWindow);
 	}
-#else
-	if (m_isVisible)
-	{
-		ShowWindow(m_hWnd, SW_SHOW);		
-	}
-	else
-	{
-		ShowWindow(m_hWnd, SW_HIDE);
-	}	
-#endif
 }
 
 void CMSWindow::Show()
 {
 	m_isVisible = true;
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 		SDL_ShowWindow(ms_pSDLWindow);
-#else
-	ShowWindow(m_hWnd, SW_SHOW);
-#endif
 }
 
 void CMSWindow::Hide()
 {
 	m_isVisible = false;
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 		SDL_HideWindow(ms_pSDLWindow);
-#else
-	ShowWindow(m_hWnd, SW_HIDE);
-#endif
 }
 
 bool CMSWindow::IsVisible()
@@ -267,27 +220,22 @@ HWND CMSWindow::GetWindowHandle()
 
 int	CMSWindow::GetScreenWidth()
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	SDL_DisplayMode dm;
 	if (SDL_GetCurrentDisplayMode(0, &dm) == 0)
 		return dm.w;
-#endif
-	return GetSystemMetrics(SM_CXSCREEN);
+	return 0;
 }
 
 int	CMSWindow::GetScreenHeight()
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	SDL_DisplayMode dm;
 	if (SDL_GetCurrentDisplayMode(0, &dm) == 0)
 		return dm.h;
-#endif
-	return GetSystemMetrics(SM_CYSCREEN);
+	return 0;
 }
 
 void CMSWindow::GetWindowRect(RECT* prc)
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow && prc)
 	{
 		int x = 0, y = 0, w = 0, h = 0;
@@ -297,15 +245,11 @@ void CMSWindow::GetWindowRect(RECT* prc)
 		prc->top = y;
 		prc->right = x + w;
 		prc->bottom = y + h;
-		return;
 	}
-#endif
-	::GetWindowRect(m_hWnd, prc);
 }
 
 void CMSWindow::GetClientRect(RECT* prc)
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow && prc)
 	{
 		int w = 0, h = 0;
@@ -314,36 +258,24 @@ void CMSWindow::GetClientRect(RECT* prc)
 		prc->top = 0;
 		prc->right = w;
 		prc->bottom = h;
-		return;
 	}
-#endif
-	::GetClientRect(m_hWnd, prc);
 }
 
 void CMSWindow::GetMousePosition(POINT* ppt)
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ppt)
 	{
 		int x = 0, y = 0;
 		SDL_GetMouseState(&x, &y);
 		ppt->x = x;
 		ppt->y = y;
-		return;
 	}
-#endif
-	GetCursorPos(ppt);
-	ScreenToClient(m_hWnd, ppt);
 }
 
 void CMSWindow::SetPosition(int x, int y)
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 		SDL_SetWindowPosition(ms_pSDLWindow, x, y);
-#else
-	SetWindowPos(m_hWnd, NULL, x, y, 0, 0, SWP_NOZORDER|SWP_NOSIZE);
-#endif
 }
 
 void CMSWindow::SetCenterPosition()
@@ -360,7 +292,6 @@ void CMSWindow::SetCenterPosition()
 
 void CMSWindow::AdjustSize(int width, int height)
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow)
 	{
 		SDL_SetWindowResizable(ms_pSDLWindow, SDL_FALSE);
@@ -371,39 +302,16 @@ void CMSWindow::AdjustSize(int width, int height)
 	}
 	Platform_SetWindowResolution(width, height);
 	SetRect(&m_rect, 0, 0, width, height);
-#else
-	SetRect(&m_rect, 0, 0, width, height);
-
-	AdjustWindowRectEx(&m_rect,
-						GetWindowStyle(m_hWnd),     
-						GetMenu(m_hWnd ) != NULL,    
-						GetWindowExStyle(m_hWnd ) ); 
-
-	MoveWindow
-	( 
-		m_hWnd, 
-		0, 
-		0, 
-		m_rect.right - m_rect.left, 
-		m_rect.bottom - m_rect.top, 
-		FALSE
-	);
-#endif
 }
 
 void CMSWindow::SetText(const char* c_szText)
 {
-#if defined(OPENMT2_PLATFORM_LINUX)
 	if (ms_pSDLWindow && c_szText)
 		SDL_SetWindowTitle(ms_pSDLWindow, c_szText);
-#else
-	SetWindowText(m_hWnd, c_szText);
-#endif
 }
 
 void CMSWindow::SetSize(int width, int height)
-{	
-#if defined(OPENMT2_PLATFORM_LINUX)
+{
 	if (ms_pSDLWindow)
 	{
 		SDL_SetWindowResizable(ms_pSDLWindow, SDL_FALSE);
@@ -414,53 +322,13 @@ void CMSWindow::SetSize(int width, int height)
 	}
 	Platform_SetWindowResolution(width, height);
 	SetRect(&m_rect, 0, 0, width, height);
-#else
-	SetWindowPos(m_hWnd, NULL, 0, 0, width, height, SWP_NOZORDER|SWP_NOMOVE);
-#endif
-}
-
-const char * CMSWindow::RegisterWindowClass(DWORD style, int brush, WNDPROC pfnWndProc, HICON hIcon, int iCursorResource)
-{
-	char szClassName[1024];
-	sprintf(szClassName, "eter - s%x:b%x:p:%zx", (unsigned int)style, brush, (size_t) pfnWndProc);
-
-	TWindowClassSet::iterator f = ms_stWCSet.find((char*) szClassName);
-
-	if (f != ms_stWCSet.end())
-		return *f;
-
-	const char* c_szStaticClassName = stl_static_string(szClassName).c_str();
-
-	ms_stWCSet.insert((char * const) c_szStaticClassName);
-	
-	WNDCLASS wc;
-
-	wc.style			= 0;
-	wc.cbClsExtra		= 0;
-	wc.cbWndExtra		= 0;
-	wc.lpfnWndProc		= pfnWndProc;
-	wc.hCursor			= LoadCursor(ms_hInstance, MAKEINTRESOURCE(iCursorResource));
-	wc.hIcon			= hIcon ? hIcon : LoadIcon(ms_hInstance, IDI_APPLICATION);
-	wc.hbrBackground	= (HBRUSH) GetStockObject(brush);
-	wc.hInstance		= ms_hInstance;	
-	wc.lpszClassName	= c_szStaticClassName;
-	wc.lpszMenuName		= "";
-
-	if (!RegisterClass(&wc)) 
-		return "";
-
-	return c_szStaticClassName;
 }
 
 CMSWindow::CMSWindow()
 {
-	m_hWnd=NULL;
-	m_isVisible=false;
-#ifdef OPENMT2_PLATFORM_LINUX
-	m_isActive=true;
-#else
-	m_isActive=false;
-#endif
+	m_hWnd = NULL;
+	m_isVisible = false;
+	m_isActive = true;
 }
 
 CMSWindow::~CMSWindow()
