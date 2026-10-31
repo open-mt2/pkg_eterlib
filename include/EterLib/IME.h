@@ -1,9 +1,12 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #ifdef _WIN32
 #include <imm.h>
 #pragma comment(lib, "imm32.lib")
-#include "Dimm.h"
+struct INPUTCONTEXT;
 #else
 #include "Platform/Platform.h"
 struct INPUTCONTEXT;
@@ -95,6 +98,10 @@ public:
 	static void CloseReadingInformation();
 	static void ChangeInputLanguage();
 	static void ChangeInputLanguageWorker();
+
+	// SDL text events (T1.6). Wired from CMSApplication::MessageProcess.
+	static void OnSDLTextEditing(const char* utf8, int start, int length);
+	static void OnSDLTextInput(const char* utf8);
 
 	LRESULT WMInputLanguage(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT WMStartComposition(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam);
@@ -199,6 +206,10 @@ public:
 
 	wchar_t					m_wszComposition[IMESTR_MAXLEN];
 	static wchar_t			m_wText[IMESTR_MAXLEN];
+
+	// SDL text input buffer (T1.6): UTF-8 text and the current composition.
+	static std::string		m_stText;
+	static std::string		m_stComposition;
 
 	static int				ms_compLen;
 	static int				ms_curpos;
